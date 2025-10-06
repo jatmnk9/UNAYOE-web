@@ -1,0 +1,929 @@
+ @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+          
+          :root {
+            /* Paleta de Colores */
+            --color-primary: #A3D2CA; /* Verde Calma */
+            --color-accent: #F7B09E;  /* Coral Optimista */
+            --color-dark: #333333;    /* Gris Carbón */
+            --color-soft-bg: #F0F5F5; /* Fondo Suave */
+            --color-white: #FFFFFF;
+            --color-text-gray: #6b7280;
+            
+            /* Sombra Estandar */
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            
+            /* Radios */
+            --radius-xl: 1.5rem; /* 24px */
+            --radius-md: 0.75rem; /* 12px */
+          }
+
+          /* ESTILOS GLOBALES (Revisado para forzar altura) */
+body, html {
+  font-family: 'Inter', sans-serif !important; 
+  overflow-x: hidden; 
+  margin: 0;
+  padding: 0;
+  /* ¡CLAVE AHORA TAMBIÉN USAR HEIGHT: 100% Y VPORT HEIGHT! */
+  height: 100%;
+  min-height: 100vh;
+  color: var(--color-dark);
+  background-color: #FAFAFA;
+}
+
+/* FORZAR LA ALTURA EN EL CONTENEDOR RAIZ DE REACT/APP */
+#root, .app-container {
+  height: 100%;
+  min-height: 100vh;
+  display: flex; /* Asegura que #root pueda usar Flexbox si es necesario */
+  flex-direction: column;
+  position: relative;
+}
+
+/* El elemento 'min-h-screen' ya hace lo que tiene que hacer,
+   pero ahora sus padres le permiten ocupar el 100% */
+          
+          /* Contenedor principal de la aplicación */
+          /* Contenedor principal de la aplicación */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  /* ¡CLAVE!: Esto permite que el contenido interno (el login) use el espacio flex. */
+  min-height: 100vh;
+  position: relative;
+}
+/* ========================================
+    SOLUCIÓN DE CENTRADO ABSOLUTO (FALLBACK)
+    ======================================== */
+.fixed-center-wrapper {
+    /* Ocupa toda la pantalla */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw; /* Ancho del Viewport */
+    height: 100vh; /* Altura del Viewport */
+    z-index: 10; /* Asegura que esté por encima de cualquier otro contenido */
+    /* Fondo Degradado APLICADO DIRECTAMENTE */
+    background: linear-gradient(
+        135deg,
+        var(--color-soft-bg) 4%,
+        var(--color-white) 50%,
+        var(--color-primary) 100%
+    );
+    /* Centrado de la tarjeta */
+    display: flex;
+    align-items: center; /* Centrado vertical */
+    justify-content: center; /* Centrado horizontal */
+}
+
+/* NOTA: En este caso, el div 'login-card' NO debe tener 'animate-fadeIn'
+   aplicado, sino el 'fixed-center-wrapper' si quieres que todo aparezca */
+
+          /* Fondo degradado fijo */
+          .app-background {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background: linear-gradient(135deg, var(--color-soft-bg) 0%, #FAFAFA 100%);
+          }
+          /* NUEVO ESTILO: Para el isotipo de imagen */
+          .logo-image-home {
+            width: 8rem;
+            height: 5rem;
+            margin-right: 0.25rem;
+            vertical-align: sub;
+            display: inline-block;
+          }
+
+          /* Oculta la barra de desplazamiento */
+          ::-webkit-scrollbar {
+            width: 0px; 
+            height: 0px;
+          }
+          
+          /* Estilos Comunes de Sección */
+          .container {
+            width: 100%;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: 1rem;
+            padding-right: 1rem;
+          }
+          
+          /* ========================================
+             HEADER
+             ======================================== */
+         .header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between; /* <--- MODIFICADO: Logo a la izquierda, botones a la derecha */
+            align-items: center;
+            padding: 1rem 2rem;
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: var(--shadow-lg);
+            border-bottom: 1px solid #e5e7eb;
+            backdrop-filter: blur(5px);
+          }
+          
+          .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            display: flex; 
+            align-items: center; /* <--- MODIFICADO: Alinea los ítems hijos verticalmente en el centro */
+            margin-right: 2rem; 
+          }
+          
+          .logo-icon {
+            width: 1.5rem;
+            height: 1.5rem;
+            margin-right: 0.25rem;
+            color: var(--color-accent);
+            stroke-width: 2.5;
+            vertical-align: sub;
+            display: inline-block;
+          }
+          
+          .logo-light {
+            font-weight: 300;
+            color: var(--color-primary);
+          }
+          
+          /* Botón de Navegación */
+          .nav-desktop {
+            display: none; /* Oculto en móvil */
+            gap: 1rem;
+          }
+
+          .nav-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: var(--color-white);
+            border-radius: var(--radius-md);
+            transition: all 0.3s ease;
+            text-decoration: none;
+          }
+
+          .nav-button:hover {
+            transform: scale(1.03);
+          }
+          .nav-button:active {
+            transform: scale(0.98);
+          }
+          
+          .nav-button.primary {
+            background-color: var(--color-primary);
+            box-shadow: 0 8px 15px -5px rgba(163, 210, 202, 0.6);
+          }
+          
+          .nav-button.accent {
+            background-color: var(--color-accent);
+            box-shadow: 0 8px 15px -5px rgba(247, 176, 158, 0.6);
+          }
+
+          .nav-icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 0.5rem;
+          }
+
+          /* ========================================
+             HERO SECTION
+             ======================================== */
+          .main-content {
+            flex-grow: 1;
+            position: relative;
+            z-index: 1;
+          }
+          
+          .hero-section {
+            padding-top: 4rem;
+            padding-bottom: 3rem;
+          }
+
+          .hero-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+          }
+          
+          .hero-text {
+            text-align: center;
+            animation-delay: 0.3s;
+          }
+          
+          .hero-tag {
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            margin-bottom: 1rem;
+            display: inline-block;
+            color: var(--color-dark);
+            background-color: var(--color-primary);
+          }
+          
+          .hero-title {
+            font-size: 3rem; 
+            font-weight: 800;
+            margin-bottom: 1rem;
+            line-height: 1.1;
+          }
+          
+          .hero-accent {
+            color: var(--color-accent);
+          }
+          
+          .hero-subtitle {
+            font-size: 1.125rem;
+            color: var(--color-text-gray);
+            max-width: 40rem;
+            margin: 0 auto 2.5rem auto;
+          }
+
+          .nav-mobile {
+            display: flex; 
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 2rem;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+          }
+          
+          .hero-image-wrapper {
+            margin-top: 2rem;
+            animation-delay: 0.5s;
+          }
+
+          .hero-image {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+            border-radius: var(--radius-xl);
+            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.2);
+            max-width: 550px;
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+            transform: rotate(1deg);
+            transition: all 0.5s ease;
+          }
+
+          .hero-image:hover {
+            transform: rotate(0deg);
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.3);
+          }
+
+          /* ========================================
+             FEATURES SECTION
+             ======================================== */
+          .features-section {
+            padding: 4rem 1rem;
+            text-align: center;
+          }
+
+          .features-heading {
+            font-size: 2.25rem;
+            font-weight: 800;
+            margin-bottom: 3rem;
+            color: var(--color-dark);
+          }
+
+          .features-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+          }
+          
+          .feature-card {
+            background-color: var(--color-white);
+            padding: 2rem;
+            border-radius: var(--radius-xl);
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f3f4f6;
+            transition: all 0.5s ease;
+            cursor: pointer;
+          }
+
+          .feature-card:hover {
+            box-shadow: 0 15px 35px -8px rgba(0, 0, 0, 0.1);
+            transform: translateY(-4px);
+          }
+          
+          .feature-icon-wrapper {
+            width: 3.5rem;
+            height: 3.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-md);
+            margin-bottom: 1rem;
+          }
+          
+          .feature-icon {
+            width: 1.75rem;
+            height: 1.75rem;
+            color: var(--color-dark);
+          }
+
+          .feature-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+          }
+          
+          .feature-description {
+            color: var(--color-text-gray);
+            font-size: 0.875rem;
+          }
+
+          /* ========================================
+             FOOTER
+             ======================================== */
+          .footer {
+            position: relative;
+            z-index: 1;
+            padding: 1.25rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--color-text-gray);
+            border-top: 1px solid #e5e7eb;
+            background-color: var(--color-white);
+          }
+
+          /* ========================================
+             ANIMACIONES
+             ======================================== */
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-50px); }
+            to { opacity: 1; transform: translateX(0); }
+          }
+          @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+          }
+          
+          .animate-fadeIn {
+            animation: fadeIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            opacity: 0; 
+          }
+          .animate-slideInLeft {
+            animation: slideInLeft 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            opacity: 0;
+          }
+          .animate-slideInRight {
+            animation: slideInRight 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            opacity: 0;
+          }
+
+          
+          /* ========================================
+    LOGIN / FORMULARIO (Diseño Mejorado)
+    ======================================== */
+.login-card {
+    /* Mantenemos el estilo de tarjeta, pero con padding más grande */
+    background-color: var(--color-white);
+    padding: 3rem; 
+    border-radius: var(--radius-xl); 
+    box-shadow: var(--shadow-lg); 
+    border: 1px solid #e5e7eb;
+    
+    width: 100%;
+    max-width: 400px; /* Un poco más ancho para el nuevo diseño */
+    z-index: 2; 
+    animation: fadeIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* --- Nuevo: Encabezado del Formulario --- */
+.login-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 0.5rem; /* Menos margen */
+}
+
+.login-header .logo-text {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+/* --- Título debajo del encabezado --- */
+.login-title {
+    font-size: 2rem; 
+    font-weight: 800;
+    margin-top: 0;
+    margin-bottom: 2rem;
+    text-align: center;
+    color: var(--color-dark);
+}
+
+/* --- Estilos para Campo y Etiqueta --- */
+.login-field {
+    margin-bottom: 1.25rem; /* Espacio entre campos */
+}
+
+.login-label {
+    display: block; /* La etiqueta ocupa su propia línea */
+    font-size: 0.875rem; /* Pequeño y legible */
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--color-dark); /* Color de texto oscuro */
+}
+
+.login-input {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    /* Borde más claro y menos radio para un look más limpio */
+    border: 1px solid #e5e7eb; 
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    color: var(--color-dark);
+    /* Fondo ligeramente diferente para destacar */
+    background-color: var(--color-soft-bg); 
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.login-input:focus {
+    /* Efecto de enfoque más profesional */
+    border-color: var(--color-primary); 
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(163, 210, 202, 0.4); 
+    background-color: var(--color-white); /* Fondo blanco al enfocar */
+}
+
+/* Eliminamos el margen inferior extra de la última entrada ya que el botón tiene su propio margen superior */
+.login-input.last-input {
+    margin-bottom: 0; 
+}
+
+.login-button {
+    width: 100%;
+    padding: 0.9rem 1.5rem; 
+    font-size: 1rem;
+    font-weight: 700;
+    margin-top: 2rem; /* Más espacio antes del botón */
+}
+
+.login-button.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none; 
+    box-shadow: none; 
+}
+
+.login-error-msg {
+    padding: 0.75rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+    color: #991b1b; 
+    background-color: #fef2f2; 
+    border-radius: var(--radius-md);
+    border: 1px solid #fca5a5; 
+    font-weight: 500;
+}
+
+.login-signup-text {
+    margin-top: 2rem; /* Espacio más grande al final */
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--color-text-gray);
+}
+
+.login-signup-link {
+    color: var(--color-accent); 
+    font-weight: 700;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+/* ========================================
+    AJUSTES PARA REGISTRO (SIGNUP)
+    ======================================== */
+
+.signup-card {
+    /* Mantenemos las propiedades clave */
+    max-height: 90vh; 
+    overflow-y: auto; 
+    max-width: 650px; /* Aumentamos el ancho máximo para acomodar 3 columnas */
+    padding: 3rem; 
+}
+/* ========================================
+    ESTILOS DEL LOGO Y ENCABEZADO (Válido para Login y Signup)
+    ======================================== */
+
+/* Contenedor del logo y texto */
+.login-header-wrapper {
+    display: flex;
+    flex-direction: column; /* Apila el logo y el texto */
+    align-items: center; /* Centra el contenido horizontalmente */
+    margin-bottom: 2rem; /* Espacio antes del título principal */
+    text-align: center;
+}
+
+/* Estilo para la imagen del logo */
+.login-logo {
+    width: 80px; /* Tamaño del logo */
+    height: auto;
+    margin-bottom: 0.5rem; /* Pequeño espacio debajo del logo */
+    /* Sugerencia: Puedes añadir una sombra sutil para darle profundidad */
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.05));
+}
+
+/* Estilo para el texto de bienvenida/subtítulo */
+.login-welcome-text {
+    font-size: 0.875rem; /* Pequeño y discreto */
+    font-weight: 600;
+    color: var(--color-text-gray); /* Color de texto suave */
+    margin-bottom: 0; /* No debe tener margen inferior aquí */
+}
+
+/* Ajuste al título principal H2 (Crea una Cuenta) */
+.login-title {
+    margin-top: 0.5rem; 
+    margin-bottom: 2rem; 
+    font-size: 2.25rem; 
+    font-weight: 800;
+    text-align: left; 
+    color: var(--color-dark);
+}
+/* Usamos Grid para organizar los inputs en 3 columnas */
+.signup-grid {
+    display: grid;
+    /* CLAVE: Tres columnas, cada una ocupando el mismo espacio */
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 3rem; /* Espacio entre los inputs */
+    margin-bottom: 1.5rem;
+}
+
+/* Aseguramos que los inputs tomen el espacio del grid */
+.signup-grid .login-input {
+    margin-bottom: 0; 
+}
+
+/* Permitimos que ciertos campos importantes o largos ocupen las 3 columnas */
+.signup-grid .full-span {
+    grid-column: 1 / -1; /* Ocupa de la columna 1 hasta el final */
+}
+
+/* Ajustes adicionales... */
+/* ... (login-section-title, login-select, etc. se mantienen igual) ... */
+
+
+/* ========================================
+    MEDIA QUERIES (Responsividad para 3 columnas)
+    ======================================== */
+
+/* Tablet (Vista de 2 columnas) */
+@media (max-width: 1024px) {
+    .signup-card {
+        max-width: 550px;
+    }
+    .signup-grid {
+        /* Pasa a dos columnas en pantallas medianas */
+        grid-template-columns: repeat(2, 1fr); 
+    }
+}
+
+/* Móvil (Vista de 1 columna) */
+@media (max-width: 550px) {
+    .signup-card {
+        padding: 1.5rem;
+    }
+    .signup-grid {
+        /* Una sola columna en dispositivos pequeños */
+        grid-template-columns: 1fr; 
+    }
+}
+
+.login-signup-link:hover {
+    text-decoration: underline;
+    color: var(--color-primary); 
+}
+
+/* ---------------------------------------
+   MEDIA QUERY para Sidebar (Ocultar/Reducir en móvil)
+   --------------------------------------- */
+
+@media (max-width: 768px) {
+    .portal-sidebar {
+        /* Estilo para sidebar plegable o menú de hamburguesa */
+        position: fixed;
+        width: 100%;
+        height: auto;
+        min-height: auto;
+        padding-bottom: 0.5rem;
+        box-shadow: var(--shadow-lg);
+        border-bottom-left-radius: var(--radius-md);
+        border-bottom-right-radius: var(--radius-md);
+        z-index: 20;
+    }
+    .portal-layout-container {
+        flex-direction: column;
+    }
+  }   
+   /* ========================================
+   ESTILOS ESPECÍFICOS DEL LOGO EN SIDEBAR
+   ======================================== */
+.sidebar-logo {
+    font-size: 1.5rem; /* El tamaño base del texto */
+    font-weight: 800;
+    color: var(--color-dark);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e0e6ed;
+    
+    /* Configuración Flexbox para alinear la imagen y el texto */
+    display: flex;
+    align-items: center;
+    line-height: 1; /* Asegura un buen espaciado de línea */
+}
+
+.sidebar-logo-image {
+    width: 2rem; /* Ajusta el tamaño del isotipo */
+    height: auto;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+}
+
+.sidebar-logo span {
+    /* Estilo para "UNAYOE" (texto principal) */
+    font-weight: 800;
+    color: var(--color-dark);
+    margin-right: 0.25rem;
+}
+
+.sidebar-logo-light {
+    /* Estilo para "Bienestar" (texto secundario) */
+    font-size: 1.2rem; /* Ligeramente más pequeño que el texto principal */
+    font-weight: 300;
+    color: var(--color-primary); /* Usa el color primario de tu tema */
+    display: inline-block;
+}
+
+/* * Ajuste de Media Query para el logo en vista móvil:
+* Como en móvil la barra lateral se comprime, ocultaremos el logo completo 
+* y solo mantendremos los botones de navegación. 
+*/
+@media (max-width: 768px) {
+    .sidebar-logo {
+        display: none; 
+    }
+}
+
+/* * Eliminamos el estilo anterior (Portal Estudiante) si existe 
+* (ya que lo reemplazamos por el logo) 
+*/
+.portal-logo-title {
+    /* Si aún existe en tu CSS, puedes dejarlo, pero su contenido
+    ha sido reemplazado por la clase .sidebar-logo en el JSX.
+    Si quieres ser limpio, revisa si puedes eliminarlo, ya que
+    el nuevo .sidebar-logo lo reemplaza. 
+    */
+    display: none; /* Mejor asegurarnos de que no interfiera */
+}
+ 
+          /* ========================================
+             MEDIA QUERIES (Responsividad)
+             ======================================== */
+
+          /* Tablet y Escritorio */
+          @media (min-width: 640px) {
+            
+            .header {
+              padding: 1rem 4rem;
+            }
+            
+            .nav-desktop {
+              display: flex;
+            }
+
+            .nav-mobile {
+                display: none;
+            }
+
+            .hero-section {
+                padding-top: 6rem;
+                padding-bottom: 5rem;
+            }
+
+            .hero-grid {
+                flex-direction: row;
+                align-items: center;
+            }
+            
+            .hero-text {
+                width: 50%;
+                text-align: left;
+            }
+
+            .hero-image-wrapper {
+                width: 50%;
+                margin-top: 0;
+            }
+
+            .hero-title {
+              font-size: 4rem; 
+            }
+            
+            .hero-subtitle {
+                margin-left: 0;
+                margin-right: 0;
+            }
+
+            .features-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+          }
+
+          /* Oculta los iconos de navegación en escritorio si no hay espacio */
+          @media (min-width: 1024px) {
+             .nav-button .nav-icon {
+                display: inline-block;
+             }
+          }
+          @media (max-width: 1023px) {
+             .nav-button .nav-icon {
+                display: none;
+             }
+             .nav-button {
+                padding: 0.75rem 1rem;
+             }
+          }
+
+
+/* ========================================
+   ESTILOS GENERALES DEL PORTAL (STUDENT/PSYCHOLOGIST)
+   ======================================== */
+
+:root {
+    /* Paleta de Colores UNAYOE */
+    --color-primary: #A3D2CA; /* Verde Calma */
+    --color-accent: #F7B09E;  /* Coral Optimista */
+    --color-dark: #333333;    /* Gris Carbón */
+    --color-soft-bg: #F0F5F5; /* Fondo Suave */
+    --color-white: #FFFFFF;
+    --color-text-gray: #6b7280;
+    
+    /* Variables de UI */
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.portal-layout-container {
+    min-height: 100vh;
+    display: flex; /* Habilita el layout de barra lateral y contenido */
+    background-color: var(--color-soft-bg); /* Fondo Suave */
+    position: relative;
+    z-index: 1; 
+}
+
+/* --- Barra Lateral --- */
+.portal-sidebar {
+    width: 18rem; /* 288px */
+    background-color: var(--color-white);
+    box-shadow: var(--shadow-lg); 
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    
+    /* CLAVE: 100vh y Sticky para barra lateral fija */
+    position: sticky; 
+    top: 0;
+    height: 100vh; 
+    overflow-y: auto;
+}
+
+/* Estilos de Logo */
+.sidebar-logo {
+    display: flex;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--color-dark); /* Gris Carbón */
+    margin-bottom: 1rem;
+    border-bottom: 2px solid var(--color-primary); /* Línea divisora Verde Calma */
+    padding-bottom: 0.5rem;
+}
+
+.sidebar-logo-image {
+    width: 2rem;
+    height: 2rem;
+    margin-right: 0.5rem;
+}
+
+.sidebar-logo-light {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--color-accent); /* Coral Optimista para énfasis */
+    margin-left: 0.25rem;
+}
+
+/* Estilos de la navegación */
+.portal-sidebar-content-wrapper {
+    flex-grow: 1; 
+}
+
+.sidebar-modules-title {
+    font-size: 0.875rem; 
+    font-weight: 600;
+    color: var(--color-text-gray); 
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.sidebar-nav-button {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    color: var(--color-dark); 
+    text-decoration: none;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-nav-button:hover {
+    background-color: #e6f1f0; /* Tono más claro de Verde Calma */
+}
+
+.sidebar-nav-button.active {
+    background-color: var(--color-primary); /* Fondo activo: Verde Calma */
+    color: var(--color-dark); /* Texto activo: Gris Carbón para buen contraste */
+    font-weight: 600;
+}
+
+/* Estilos de la cabecera del usuario (Conectado) */
+.sidebar-user-header {
+    border-bottom: 1px solid var(--color-soft-bg);
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.sidebar-user-email {
+    font-size: 0.875rem;
+    color: var(--color-text-gray);
+    margin-bottom: 0.75rem;
+    padding: 0 0.5rem; 
+    /* Ajuste para que el texto encaje mejor */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar-logout-button {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    background-color: var(--color-accent); /* Botón de cierre de sesión: Coral Optimista */
+    color: var(--color-white);
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: background-color 0.15s ease;
+    cursor: pointer;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-logout-button:hover {
+    background-color: #e49f8d; /* Tono oscuro de Coral Optimista */
+}
+
+/* Contenido Principal */
+.portal-main-content {
+    flex-grow: 1;
+    padding: 2rem;
+    overflow-y: auto; 
+}
+
+.portal-loading {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--color-dark);
+}
