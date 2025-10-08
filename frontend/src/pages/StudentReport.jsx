@@ -1,9 +1,6 @@
-// src/components/StudentReport.jsx
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
-// Modelo para los datos de análisis
 const initialAnalysis = {
     sentiments: null,
     emotions: null,
@@ -11,7 +8,7 @@ const initialAnalysis = {
 };
 
 export default function StudentReport() {
-    const { studentId } = useParams(); // Obtener el ID del estudiante de la URL
+    const { studentId } = useParams();
     const navigate = useNavigate();
     const [analysis, setAnalysis] = useState(initialAnalysis);
     const [notes, setNotes] = useState([]);
@@ -22,7 +19,6 @@ export default function StudentReport() {
         setLoading(true);
         setError(null);
         try {
-            // Llama al nuevo endpoint que obtiene, analiza y genera gráficos
             const res = await fetch(`http://127.0.0.1:8000/analyze/${studentId}`);
             const result = await res.json();
 
@@ -32,18 +28,14 @@ export default function StudentReport() {
 
             setAnalysis(result.analysis || initialAnalysis);
             setNotes(result.notes || []);
-
         } catch (err) {
-            console.error("Error en la carga del reporte:", err);
             setError(err.message || "No se pudo cargar el reporte. El estudiante puede no tener notas.");
         } finally {
             setLoading(false);
         }
     };
-    
-    // Función para exportar los datos como CSV
+
     const handleExportCSV = () => {
-        // Redirigir a la URL del backend para forzar la descarga
         window.open(`http://127.0.0.1:8000/export/${studentId}`, '_blank');
     };
 
@@ -52,87 +44,293 @@ export default function StudentReport() {
     }, [studentId]);
 
     if (loading) {
-        return <div className="min-h-screen flex items-center justify-center">Generando reporte de análisis...</div>;
+        return (
+            <div className="portal-main-content">
+                <div
+                    className="login-card"
+                    style={{
+                        maxWidth: "700px",
+                        margin: "2rem auto",
+                        padding: "2rem",
+                        borderRadius: "1.2rem",
+                        boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+                        background: "var(--color-soft-bg)",
+                        textAlign: "center",
+                        fontWeight: 600,
+                        color: "var(--color-primary)",
+                        fontSize: "1.2rem"
+                    }}
+                >
+                    Generando reporte de análisis...
+                </div>
+            </div>
+        );
     }
-    
+
     if (error) {
-        return <div className="min-h-screen p-6 text-center text-red-600">Error: {error}</div>;
+        return (
+            <div className="portal-main-content">
+                <div
+                    className="login-card"
+                    style={{
+                        maxWidth: "700px",
+                        margin: "2rem auto",
+                        padding: "2rem",
+                        borderRadius: "1.2rem",
+                        boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+                        background: "var(--color-soft-bg)",
+                        textAlign: "center",
+                        color: "red",
+                        fontWeight: 600,
+                        fontSize: "1.1rem"
+                    }}
+                >
+                    Error: {error}
+                </div>
+            </div>
+        );
     }
 
     return (
-        <div className="min-h-screen p-6 bg-gray-50">
-            <div className="w-full max-w-6xl mx-auto">
-                <header className="flex justify-between items-center mb-8 pb-4 border-b">
-                    <h1 className="text-3xl font-bold text-indigo-700">
-                        Seguimiento Diario (Estudiante ID: {studentId.substring(0, 8)}...)
-                    </h1>
-                    <div className="space-x-4">
+        <div className="portal-main-content">
+            <div
+                className="login-card"
+                style={{
+                    maxWidth: "900px",
+                    margin: "2rem auto",
+                    padding: "2.5rem 2rem",
+                    borderRadius: "1.2rem",
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+                    background: "var(--color-soft-bg)",
+                }}
+            >
+                {/* Título principal */}
+                <h1 style={{
+                    fontSize: "2.2rem",
+                    fontWeight: 700,
+                    color: "var(--color-primary)",
+                    marginBottom: "0.5rem",
+                    textAlign: "center",
+                    borderBottom: "2px solid var(--color-soft-bg)",
+                    paddingBottom: "0.7rem"
+                }}>
+                    Seguimiento Diario
+                </h1>
+                {/* Subtítulo y acciones */}
+                <div style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "2rem",
+                    paddingBottom: "0.5rem",
+                    color: "var(--color-dark)",
+                    fontSize: "1.05rem",
+                    fontWeight: 500
+                }}>
+                    <span>
+                        Estudiante ID: {studentId.substring(0, 8)}...
+                    </span>
+                    <div style={{ display: "flex", gap: "1rem" }}>
                         <button
                             onClick={handleExportCSV}
-                            className="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition"
+                            style={{
+                                padding: "0.6rem 1.2rem",
+                                background: "var(--color-primary)",
+                                color: "#fff",
+                                borderRadius: "0.7rem",
+                                border: "none",
+                                fontWeight: 600,
+                                boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+                                cursor: "pointer",
+                                transition: "background 0.2s",
+                            }}
+                            onMouseOver={e => e.target.style.background = "var(--color-dark)"}
+                            onMouseOut={e => e.target.style.background = "var(--color-primary)"}
                         >
                             Exportar Reporte (CSV)
                         </button>
-                        <button 
-                            onClick={() => navigate('/psychologist')}
-                            className="px-4 py-2 bg-gray-400 text-white rounded-lg shadow hover:bg-gray-500 transition"
+                        <button
+                            onClick={() => navigate('/psychologist/seguimiento')}
+                            style={{
+                                padding: "0.6rem 1.2rem",
+                                background: "var(--color-soft-bg)",
+                                color: "var(--color-dark)",
+                                borderRadius: "0.7rem",
+                                border: "none",
+                                fontWeight: 600,
+                                boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+                                cursor: "pointer",
+                                transition: "background 0.2s",
+                            }}
+                            onMouseOver={e => e.target.style.background = "var(--color-primary)"}
+                            onMouseOut={e => e.target.style.background = "var(--color-soft-bg)"}
                         >
                             Volver al Listado
                         </button>
                     </div>
-                </header>
-                
+                </div>
+
                 {notes.length === 0 ? (
-                    <div className="text-center py-10 text-gray-600 border rounded-lg bg-white">
-                        <p className="text-xl font-semibold">Este estudiante no tiene notas de diario para analizar.</p>
+                    <div style={{
+                        textAlign: "center",
+                        padding: "2rem",
+                        color: "var(--color-text-gray)",
+                        background: "#fff",
+                        borderRadius: "0.7rem",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+                        fontSize: "1.1rem"
+                    }}>
+                        <p style={{ fontWeight: 600 }}>Este estudiante no tiene notas de diario para analizar.</p>
                     </div>
                 ) : (
                     <>
-                        <h2 className="text-2xl font-semibold mb-4">Análisis Visual de Notas</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <h2 style={{
+                            fontSize: "1.5rem",
+                            fontWeight: 600,
+                            marginBottom: "1.2rem",
+                            color: "var(--color-dark)"
+                        }}>
+                            Análisis Visual de Notas
+                        </h2>
+                        <div style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: "1.5rem",
+                            marginBottom: "2rem"
+                        }}>
                             {/* Gráfico de Sentimientos */}
                             {analysis.sentiments && (
-                                <div className="bg-white p-4 shadow rounded-lg">
-                                    <h3 className="text-xl font-medium mb-2">Distribución de Sentimientos</h3>
-                                    <img src={`data:image/png;base64,${analysis.sentiments}`} alt="Gráfico de Sentimientos" className="w-full h-auto"/>
+                                <div style={{
+                                    background: "#fff",
+                                    padding: "1rem",
+                                    borderRadius: "0.7rem",
+                                    boxShadow: "0 2px 8px rgba(0,0,0,0.07)"
+                                }}>
+                                    <h3 style={{
+                                        fontSize: "1.1rem",
+                                        fontWeight: 600,
+                                        marginBottom: "0.5rem",
+                                        color: "var(--color-primary)"
+                                    }}>
+                                        Distribución de Sentimientos
+                                    </h3>
+                                    <img src={`data:image/png;base64,${analysis.sentiments}`} alt="Gráfico de Sentimientos" style={{ width: "100%", height: "auto" }} />
                                 </div>
                             )}
-                            
+
                             {/* Gráfico de Emociones */}
                             {analysis.emotions && (
-                                <div className="bg-white p-4 shadow rounded-lg">
-                                    <h3 className="text-xl font-medium mb-2">Distribución de Emociones</h3>
-                                    <img src={`data:image/png;base64,${analysis.emotions}`} alt="Gráfico de Emociones" className="w-full h-auto"/>
+                                <div style={{
+                                    background: "#fff",
+                                    padding: "1rem",
+                                    borderRadius: "0.7rem",
+                                    boxShadow: "0 2px 8px rgba(0,0,0,0.07)"
+                                }}>
+                                    <h3 style={{
+                                        fontSize: "1.1rem",
+                                        fontWeight: 600,
+                                        marginBottom: "0.5rem",
+                                        color: "var(--color-primary)"
+                                    }}>
+                                        Distribución de Emociones
+                                    </h3>
+                                    <img src={`data:image/png;base64,${analysis.emotions}`} alt="Gráfico de Emociones" style={{ width: "100%", height: "auto" }} />
                                 </div>
                             )}
-                            
+
                             {/* Nube de Palabras (Ocupa todo el ancho) */}
                             {analysis.wordcloud && (
-                                <div className="col-span-1 md:col-span-2 bg-white p-4 shadow rounded-lg">
-                                    <h3 className="text-xl font-medium mb-2">Nube de Palabras Clave</h3>
-                                    <img src={`data:image/png;base64,${analysis.wordcloud}`} alt="Nube de Palabras" className="w-full h-auto"/>
+                                <div style={{
+                                    gridColumn: "1 / span 2",
+                                    background: "#fff",
+                                    padding: "1rem",
+                                    borderRadius: "0.7rem",
+                                    boxShadow: "0 2px 8px rgba(0,0,0,0.07)"
+                                }}>
+                                    <h3 style={{
+                                        fontSize: "1.1rem",
+                                        fontWeight: 600,
+                                        marginBottom: "0.5rem",
+                                        color: "var(--color-primary)"
+                                    }}>
+                                        Nube de Palabras Clave
+                                    </h3>
+                                    <img src={`data:image/png;base64,${analysis.wordcloud}`} alt="Nube de Palabras" style={{ width: "100%", height: "auto" }} />
                                 </div>
                             )}
                         </div>
 
-                        <h2 className="text-2xl font-semibold mb-4">Notas Individuales ({notes.length} en total)</h2>
-                        <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                            {notes.map((n) => (
-                                <div key={n.id} className="p-4 bg-white shadow rounded-lg border border-gray-200">
-                                    <p className="text-sm text-gray-400 mb-1">
-                                        {new Date(n.created_at).toLocaleString()}
-                                    </p>
-                                    <p className="font-medium text-gray-800 mb-2">{n.nota}</p>
-                                    <div className="text-sm space-x-4">
-                                        <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
-                                            Sentimiento: {n.sentimiento}
-                                        </span>
-                                        <span className="inline-block px-3 py-1 bg-pink-100 text-pink-800 rounded-full">
-                                            Emoción: {n.emocion} ({(n.emocion_score * 100).toFixed(1)}%)
-                                        </span>
+                        <h2 style={{
+                            fontSize: "1.5rem",
+                            fontWeight: 600,
+                            marginBottom: "1.2rem",
+                            color: "var(--color-dark)"
+                        }}>
+                            Notas Individuales ({notes.length} en total)
+                        </h2>
+                        <div style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "1rem",
+                            maxHeight: "350px",
+                            overflowY: "auto",
+                            paddingRight: "0.5rem"
+                        }}>
+                            {notes.map((n) => {
+                                // Color para sentimiento
+                                let sentimientoColor = "var(--color-primary)";
+                                if (n.sentimiento === "NEG") sentimientoColor = "#d72660";
+                                else if (n.sentimiento === "POS") sentimientoColor = "#2563eb";
+                                // Color para emoción
+                                let emocionBg = "#e4f3ff";
+                                let emocionColor = "#2563eb";
+                                return (
+                                    <div key={n.id} style={{
+                                        background: "#fff",
+                                        padding: "1rem",
+                                        borderRadius: "0.7rem",
+                                        boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+                                        border: "1px solid #eee"
+                                    }}>
+                                        <p style={{
+                                            fontSize: "0.95rem",
+                                            color: "var(--color-text-gray)",
+                                            marginBottom: "0.3rem"
+                                        }}>
+                                            {new Date(n.created_at).toLocaleString()}
+                                        </p>
+                                        <p style={{
+                                            fontWeight: 500,
+                                            color: "var(--color-dark)",
+                                            marginBottom: "0.5rem"
+                                        }}>
+                                            {n.nota}
+                                        </p>
+                                        <div style={{ fontSize: "0.95rem", display: "flex", gap: "1rem" }}>
+                                            <span style={{
+                                                display: "inline-block",
+                                                padding: "0.3rem 0.8rem",
+                                                background: "var(--color-soft-bg)",
+                                                color: sentimientoColor,
+                                                borderRadius: "1rem",
+                                                fontWeight: 600
+                                            }}>
+                                                Sentimiento: {n.sentimiento}
+                                            </span>
+                                            <span style={{
+                                                display: "inline-block",
+                                                padding: "0.3rem 0.8rem",
+                                                background: emocionBg,
+                                                color: emocionColor,
+                                                borderRadius: "1rem",
+                                                fontWeight: 600
+                                            }}>
+                                                Emoción: {n.emocion} ({(n.emocion_score * 100).toFixed(1)}%)
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </>
                 )}

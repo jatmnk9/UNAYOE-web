@@ -1,5 +1,3 @@
-// src/components/SeguimientoDiario.jsx
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,7 +6,6 @@ export default function SeguimientoDiario() {
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
-    // Función para obtener la lista de estudiantes desde el backend de FastAPI
     const fetchStudents = async () => {
         try {
             const res = await fetch('http://127.0.0.1:8000/psychologist/students');
@@ -29,66 +26,155 @@ export default function SeguimientoDiario() {
     }, []);
 
     const handleViewReport = (studentId) => {
-        // Navegar a la ruta de reporte individual
         navigate(`/psychologist/seguimiento/${studentId}`);
     };
 
-    if (loading) {
-        return <div className="min-h-screen flex items-center justify-center text-indigo-600">Cargando lista de estudiantes...</div>;
-    }
-
     return (
-        <div className="w-full max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-xl">
-            <h2 className="text-3xl font-bold text-indigo-700 mb-6 border-b pb-2">Seguimiento Diario de Pacientes</h2>
-            
-            <div className="mb-4">
-                <button 
-                    onClick={() => navigate('/psychologist')}
-                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
+        <div className="portal-main-content">
+            <div
+                className="login-card"
+                style={{
+                    width: "100%",
+                    maxWidth: "900px",
+                    margin: "2rem auto",
+                    padding: "2.5rem 2rem",
+                    borderRadius: "1.2rem",
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+                    background: "var(--color-soft-bg)",
+                    backdropFilter: "blur(2px)",
+                }}
+            >
+                <h2
+                    className="login-title"
+                    style={{
+                        fontSize: "2.2rem",
+                        color: "var(--color-primary)",
+                        fontWeight: 700,
+                        marginBottom: "1.5rem",
+                        textAlign: "center",
+                        borderBottom: "2px solid var(--color-soft-bg)",
+                        paddingBottom: "0.7rem"
+                    }}
                 >
-                    ← Volver al Portal
-                </button>
-            </div>
+                    Seguimiento Diario de Pacientes
+                </h2>
 
-            {students.length === 0 ? (
-                <p className="text-gray-600">No hay estudiantes asignados para seguimiento.</p>
-            ) : (
-                <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-indigo-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                    Nombre Completo
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                    Código
-                                </th>
-                                <th className="px-6 py-3"></th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {students.map((student) => (
-                                <tr key={student.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        {student.nombre} {student.apellido}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {student.codigo_alumno}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button
-                                            onClick={() => handleViewReport(student.id)}
-                                            className="px-4 py-2 bg-indigo-600 text-white rounded-md shadow hover:bg-indigo-700 transition"
-                                        >
-                                            Ver Reporte
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                <div style={{ marginBottom: "1.5rem", textAlign: "left" }}>
+                    <button
+                        onClick={() => navigate('/psychologist')}
+                        style={{
+                            padding: "0.6rem 1.2rem",
+                            background: "var(--color-soft-bg)",
+                            color: "var(--color-dark)",
+                            borderRadius: "0.7rem",
+                            border: "none",
+                            fontWeight: 600,
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+                            cursor: "pointer",
+                            transition: "background 0.2s",
+                        }}
+                        onMouseOver={e => e.target.style.background = "var(--color-primary)"}
+                        onMouseOut={e => e.target.style.background = "var(--color-soft-bg)"}
+                    >
+                        ← Volver al Portal
+                    </button>
                 </div>
-            )}
+
+                {loading ? (
+                    <div style={{
+                        background: "rgba(255,255,255,0.85)",
+                        padding: "2rem 2.5rem",
+                        borderRadius: "1.2rem",
+                        boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+                        fontWeight: 600,
+                        color: "var(--color-primary)",
+                        fontSize: "1.2rem",
+                        textAlign: "center"
+                    }}>
+                        Cargando lista de estudiantes...
+                    </div>
+                ) : students.length === 0 ? (
+                    <p style={{ color: "var(--color-text-gray)", textAlign: "center", fontSize: "1.1rem" }}>
+                        No hay estudiantes asignados para seguimiento.
+                    </p>
+                ) : (
+                    <div style={{
+                        boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+                        borderRadius: "0.7rem",
+                        overflow: "hidden",
+                        background: "#fff"
+                    }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                            <thead style={{ background: "var(--color-soft-bg)" }}>
+                                <tr>
+                                    <th style={{
+                                        padding: "1rem",
+                                        textAlign: "left",
+                                        fontSize: "1rem",
+                                        fontWeight: 700,
+                                        color: "var(--color-dark)",
+                                        letterSpacing: "0.04em"
+                                    }}>
+                                        Nombre Completo
+                                    </th>
+                                    <th style={{
+                                        padding: "1rem",
+                                        textAlign: "left",
+                                        fontSize: "1rem",
+                                        fontWeight: 700,
+                                        color: "var(--color-dark)",
+                                        letterSpacing: "0.04em"
+                                    }}>
+                                        Código
+                                    </th>
+                                    <th style={{ padding: "1rem" }}></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {students.map((student) => (
+                                    <tr key={student.id} style={{ borderBottom: "1px solid #eee", transition: "background 0.2s" }}>
+                                        <td style={{
+                                            padding: "1rem",
+                                            fontSize: "1rem",
+                                            fontWeight: 500,
+                                            color: "var(--color-dark)"
+                                        }}>
+                                            {student.nombre} {student.apellido}
+                                        </td>
+                                        <td style={{
+                                            padding: "1rem",
+                                            fontSize: "1rem",
+                                            color: "var(--color-text-gray)"
+                                        }}>
+                                            {student.codigo_alumno}
+                                        </td>
+                                        <td style={{ padding: "1rem", textAlign: "right" }}>
+                                            <button
+                                                onClick={() => handleViewReport(student.id)}
+                                                style={{
+                                                    padding: "0.6rem 1.2rem",
+                                                    background: "var(--color-primary)",
+                                                    color: "#fff",
+                                                    borderRadius: "0.7rem",
+                                                    border: "none",
+                                                    fontWeight: 600,
+                                                    boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+                                                    cursor: "pointer",
+                                                    transition: "background 0.2s",
+                                                }}
+                                                onMouseOver={e => e.target.style.background = "var(--color-dark)"}
+                                                onMouseOut={e => e.target.style.background = "var(--color-primary)"}
+                                            >
+                                                Ver Reporte
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
