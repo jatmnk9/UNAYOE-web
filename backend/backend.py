@@ -21,6 +21,12 @@ import json # Necesario para manejar la serialización de Supabase si los tokens
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+# =========================================================
+# 🧠 SISTEMA DE RECOMENDACIONES BASADO EN CONTENIDO
+# =========================================================
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 # --- Configuración de Supabase (Asumo que estas credenciales son válidas y solo de ejemplo) ---
 url = "https://xygadfvudziwnddcicbb.supabase.co"
 # python/main.py (Backend FastAPI)
@@ -86,6 +92,7 @@ origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=".*",  # ✅ Permite cualquier origen local
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -126,6 +133,7 @@ def preprocesar_texto(texto):
     stop_words = set(stopwords.words('spanish'))
     tokens_limpios = [token for token in tokens if token not in stop_words and len(token) > 2]
     return " ".join(tokens_limpios), tokens_limpios
+
 
 
 @app.post("/usuarios/estudiantes")
@@ -435,3 +443,152 @@ async def export_student_report(user_id: str):
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename=reporte_diario_{user_id}.csv"}
     )
+# =========================================================
+# 🎯 ENDPOINT: Obtener TODAS las Recomendaciones
+# Corresponde a la ruta: GET http://127.0.0.1:8000/recomendaciones/todas
+# =========================================================
+@app.get("/recomendaciones/todas")
+async def obtener_todas_las_recomendaciones():
+    """
+    Recupera todas las entradas de la tabla 'recomendaciones' para mostrarlas.
+    """
+    try:
+        # 1. Realizar la consulta a la tabla 'recomendaciones'
+        recs_response = supabase.table("recomendaciones").select("*").execute()
+        
+        # 2. Verificar si hay datos
+        if not recs_response.data:
+            return {"message": "No se encontraron recomendaciones", "data": []}
+            
+        # 3. Devolver los datos de manera estructurada
+        return {
+            "message": "Todas las recomendaciones recuperadas con éxito",
+            "data": recs_response.data
+        }
+
+    except Exception as e:
+        print(f"Error al obtener todas las recomendaciones: {e}")
+        # En caso de error de conexión o base de datos
+        raise HTTPException(status_code=500, detail=f"Error interno al buscar todas las recomendaciones: {e}")
+@app.get("/recomendaciones/{user_id}")
+async def obtener_recomendaciones(user_id: str):
+    """
+    Genera recomendaciones personalizadas considerando emociones recientes y gustos del usuario.
+    """
+    try:
+        # 🧠 1️⃣ Últimas emociones del usuario (por sus notas)
+        notas_response = supabase.table("notas")\
+            .select("emocion, sentimiento")\
+            .eq("usuario_id", user_id)\
+            .order("created_at", desc=True)\
+            .limit(5).execute()
+
+        notas_data = notas_response.data or []
+
+        # 🧡 2️⃣ Emociones frecuentes en los likes
+        likes_response = supabase.table("likes_recomendaciones")\
+            .select("recomendaciones:recomendacion_id(emocion_objetivo, sentimiento_objetivo)")\
+            .eq("user_id", user_id).execute()
+
+        likes_data = [r["recomendaciones"] for r in likes_response.data if r.get("recomendaciones")]
+
+        # 🧮 Combinar ambas fuentes de emoción
+        emociones = [n["emocion"] for n in notas_data] + [l["emocion_objetivo"] for l in likes_data]
+        sentimientos = [n["sentimiento"] for n in notas_data] + [l["sentimiento_objetivo"] for l in likes_data]
+
+        if not emociones:
+            recs = supabase.table("recomendaciones").select("*").execute()
+            return {"message": "Recomendaciones generales", "data": recs.data}
+
+        emocion_principal = pd.Series(emociones).mode()[0]
+        sentimiento_principal = pd.Series(sentimientos).mode()[0]
+
+        # 🎯 3️⃣ Buscar coincidencias
+        recs_response = supabase.table("recomendaciones").select("*").execute()
+        df = pd.DataFrame(recs_response.data)
+        mask = (df["emocion_objetivo"] == emocion_principal) | (df["sentimiento_objetivo"] == sentimiento_principal)
+        recomendadas = df[mask]
+
+        if recomendadas.empty:
+            recomendadas = df.sample(min(3, len(df)))
+
+        return {
+            "message": "Recomendaciones personalizadas con éxito",
+            "data": recomendadas.to_dict(orient="records"),
+            "emocion_detectada": emocion_principal,
+            "sentimiento_detectado": sentimiento_principal
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generando recomendaciones: {e}")
+
+# 1️⃣ Agregar like
+@app.post("/likes/{user_id}/{recomendacion_id}")
+async def agregar_like(user_id: str, recomendacion_id: str):
+    try:
+        supabase.table("likes_recomendaciones").insert({
+            "user_id": user_id,
+            "recomendacion_id": recomendacion_id
+        }).execute()
+        return {"message": "Like agregado"}
+    except Exception as e:
+        # Si ya existe, ignoramos el error de duplicado
+        return {"message": f"No se pudo agregar el like: {e}"}
+
+
+# 2️⃣ Quitar like
+@app.delete("/likes/{user_id}/{recomendacion_id}")
+async def eliminar_like(user_id: str, recomendacion_id: str):
+    supabase.table("likes_recomendaciones")\
+        .delete()\
+        .eq("user_id", user_id)\
+        .eq("recomendacion_id", recomendacion_id)\
+        .execute()
+    return {"message": "Like eliminado"}
+
+
+# 3️⃣ Obtener likes del usuario
+@app.get("/likes/{user_id}")
+async def obtener_likes_usuario(user_id: str):
+    res = supabase.table("likes_recomendaciones")\
+        .select("recomendacion_id")\
+        .eq("user_id", user_id).execute()
+    return [r["recomendacion_id"] for r in res.data]
+
+
+# =========================================================
+# 🎯 NUEVO ENDPOINT: Obtener las Recomendaciones favoritas del usuario
+# Corresponde a la ruta: GET http://127.0.0.1:8000/recomendaciones/favoritos/{user_id}
+# =========================================================
+@app.get("/recomendaciones/favoritos/{user_id}")
+async def obtener_recomendaciones_favoritas(user_id: str):
+    """
+    Obtiene los detalles completos de las recomendaciones que un usuario ha marcado como favoritas.
+    
+    Utiliza una selección con JOIN (dot notation) para traer los datos de la tabla 'recomendaciones'.
+    Supone que 'likes_recomendaciones' tiene una FK 'recomendacion_id' a 'recomendaciones'.
+    """
+    try:
+        # Consulta a Supabase:
+        # 1. Selecciona la columna 'recomendaciones' (el nombre de la tabla relacionada).
+        # 2. El asterisco '*' indica que traiga todos los campos de la recomendación.
+        # 3. Filtra por el 'user_id'.
+        response = supabase.table("likes_recomendaciones")\
+            .select("recomendaciones(*)")\
+            .eq("user_id", user_id)\
+            .execute()
+
+        # Los datos vienen anidados en un objeto { "recomendaciones": {...} }
+        if response.data:
+            # Extraer solo el objeto de la recomendación
+            favoritas = [item["recomendaciones"] for item in response.data if item.get("recomendaciones")]
+            return {
+                "message": "Favoritos recuperados con éxito",
+                "data": favoritas
+            }
+        
+        return {"message": "No se encontraron recomendaciones favoritas", "data": []}
+
+    except Exception as e:
+        print(f"Error al obtener recomendaciones favoritas: {e}")
+        raise HTTPException(status_code=500, detail=f"Error interno al buscar favoritos: {e}")

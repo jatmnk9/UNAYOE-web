@@ -13,6 +13,9 @@ import StudentReport from "./pages/StudentReport";
 import PsychologistDashboard from "./pages/PsychologistDashboard";
 import MiDiarioDeBienestar from "./pages/MiDiarioDeBienestar";
 import StudentDashboard from "./pages/StudentDashboard";
+import Recomendaciones from "./pages/Recomendaciones";
+import MisFavoritos from "./pages/MisFavoritos";
+
 
 // ✅ RUTA PRIVADA integrada
 function PrivateRoute({ children, role }) {
@@ -65,6 +68,9 @@ export default function App() {
       >
         <Route index element={<StudentDashboard />} />
         <Route path="diario" element={<MiDiarioDeBienestar />} />
+        <Route path="recomendaciones" element={<Recomendaciones />} />
+        <Route path="favoritos" element={<MisFavoritos />} />
+
       </Route>
 
       {/* =======================================
@@ -81,6 +87,7 @@ export default function App() {
         <Route index element={<PsychologistDashboard />} />
         <Route path="seguimiento" element={<SeguimientoDiario />} />
         <Route path="seguimiento/:studentId" element={<StudentReport />} />
+
       </Route>
 
       {/* Catch-all */}
