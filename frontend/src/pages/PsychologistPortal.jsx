@@ -65,6 +65,12 @@ export default function PsychologistPortal() {
                         >
                             <NotebookPen className="sidebar-nav-icon" />Seguimiento Diario
                         </Link>
+                        <Link
+                            to={`${baseUrl}/seguimiento-citas`}
+                            className={getNavLinkClass(`${baseUrl}/seguimiento-citas`)}
+                        >
+                            <NotebookPen className="sidebar-nav-icon" />Seguimiento de Citas
+                        </Link>
                     </nav>
                 </div>
             </aside>

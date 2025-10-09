@@ -100,6 +100,13 @@ export default function StudentPortal() {
             >
               <Heart className="sidebar-nav-icon" />Mis Favoritos
             </Link>
+
+            <Link
+                to={`${baseUrl}/seguimiento-citas`}
+                className={getNavLinkClass(`${baseUrl}/seguimiento-citas`)}
+            >
+                <NotebookPen className="sidebar-nav-icon" />Seguimiento de Citas
+            </Link>
             
           </nav>
         </div>

@@ -16,6 +16,8 @@ import StudentDashboard from "./pages/StudentDashboard";
 import Recomendaciones from "./pages/Recomendaciones";
 import MisFavoritos from "./pages/MisFavoritos";
 
+import StudentAttendance from "./pages/StudentAttendance";
+import SeguimientoCitas from "./pages/SeguimientoCitas";
 
 // ✅ RUTA PRIVADA integrada
 function PrivateRoute({ children, role }) {
@@ -71,6 +73,7 @@ export default function App() {
         <Route path="recomendaciones" element={<Recomendaciones />} />
         <Route path="favoritos" element={<MisFavoritos />} />
 
+        <Route path="asistencia" element={<StudentAttendance />} />
       </Route>
 
       {/* =======================================
@@ -88,6 +91,7 @@ export default function App() {
         <Route path="seguimiento" element={<SeguimientoDiario />} />
         <Route path="seguimiento/:studentId" element={<StudentReport />} />
 
+        <Route path="seguimiento-citas" element={<SeguimientoCitas />} />
       </Route>
 
       {/* Catch-all */}
