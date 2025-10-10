@@ -20,7 +20,7 @@ import os
 from fastapi import Depends
 import json # Necesario para manejar la serialización de Supabase si los tokens son complejos
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 # =========================================================
 # 🧠 SISTEMA DE RECOMENDACIONES BASADO EN CONTENIDO

@@ -2,6 +2,7 @@
 import { useAuth } from "../context/AuthContext";
 import { Link, Outlet, useLocation } from "react-router-dom"; 
 import { Home as HomeIcon, Heart,BookOpen,Clapperboard, LogOut, NotebookPen } from 'lucide-react';
+import ChatButton from "../components/ChatbotButton"; // Importa el botón del chatbot
 
 export default function StudentPortal() {
   // 💡 CORRECCIÓN 1: Usar 'logout' y quitar 'signOutUser' y 'loading: authLoading'
@@ -116,7 +117,9 @@ export default function StudentPortal() {
       {/* Contenido Principal */}
       <main className="portal-main-content">
         <Outlet />
+<ChatButton /> {/* Añade el botón del chatbot aquí */}
       </main>
+        
     </div>
   );
 }
