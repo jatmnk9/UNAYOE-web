@@ -24,6 +24,8 @@ from fastapi.responses import JSONResponse, StreamingResponse
 import traceback
 import requests
 from pydantic import BaseModel
+from fastapi import Request
+
 # =========================================================
 # 🧠 SISTEMA DE RECOMENDACIONES BASADO EN CONTENIDO
 # =========================================================
@@ -71,6 +73,19 @@ class Psicologo(BaseModel):
     genero: str
     estado: str
     id: str
+
+class AsistenciaRequest(BaseModel):
+    id_usuario: str
+    fecha_atencion: str
+    nro_sesion: int
+    modalidad_atencion: str
+    motivo_atencion: str
+    detalle_problema_actual: str
+    acude_profesional_particular: bool
+    diagnostico_particular: str | None = None
+    tipo_tratamiento_actual: str
+    comodidad_unayoe: bool
+    aprendizaje_obtenido: str
 
 
 # Define la estructura de datos para una nota (Añadido user_id)
@@ -161,6 +176,15 @@ async def generate_attendance_insight(payload: dict):
     except Exception as e:
         print(f"Error en Gemini: {e}")
         raise HTTPException(status_code=500, detail=f"Error generando insight: {e}")
+    
+@app.post("/asistencia")
+async def registrar_asistencia(asistencia: AsistenciaRequest):
+    try:
+        data = asistencia.dict()
+        response = supabase.table("asistencia").insert(data).execute()
+        return {"message": "Asistencia registrada con éxito", "data": response.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al registrar asistencia: {e}")
 
 @app.post("/usuarios/estudiantes")
 async def crear_estudiante(estudiante: Estudiante):
