@@ -4,7 +4,12 @@ Gestiona las rutas relacionadas con estudiantes y psicólogos.
 """
 from fastapi import APIRouter
 
-from app.models.schemas import Estudiante, Psicologo
+
+
+
+
+
+from app.models.schemas import EstudianteCreate, PsicologoCreate
 from app.services.users_service import users_service
 
 router = APIRouter(
@@ -14,7 +19,7 @@ router = APIRouter(
 
 
 @router.post("/estudiantes")
-async def crear_estudiante(estudiante: Estudiante):
+async def crear_estudiante(estudiante: EstudianteCreate):
     """
     Crea un nuevo estudiante en el sistema.
 
@@ -28,7 +33,7 @@ async def crear_estudiante(estudiante: Estudiante):
 
 
 @router.post("/psicologos")
-async def crear_psicologo(psicologo: Psicologo):
+async def crear_psicologo(psicologo: PsicologoCreate):
     """
     Crea un nuevo psicólogo en el sistema.
 

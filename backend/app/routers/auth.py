@@ -5,6 +5,8 @@ Gestiona las rutas relacionadas con login y autenticación.
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
+
+
 from app.models.schemas import LoginRequest
 from app.services.auth_service import auth_service
 
