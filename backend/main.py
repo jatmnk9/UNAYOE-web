@@ -13,7 +13,8 @@ from app.routers import (
     users,
     notes,
     analysis,
-    recommendations
+    recommendations,
+    appointments
 )
 
 
@@ -48,6 +49,7 @@ def create_application() -> FastAPI:
     application.include_router(analysis.router)
     application.include_router(recommendations.router)
     application.include_router(recommendations.router_likes)
+    application.include_router(appointments.router)
 
     return application
 
@@ -74,7 +76,8 @@ async def root():
             "notes": "/notas",
             "analysis": "/analyze, /export",
             "recommendations": "/recomendaciones",
-            "likes": "/likes"
+            "likes": "/likes",
+            "appointments": "/citas"
         }
     }
 
