@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 // 💡 1. Definir la estructura base para FastAPI (¡CRÍTICO!)
 const initialStudentData = {
@@ -23,6 +24,17 @@ export default function Signup() {
   const [formData, setFormData] = useState(initialStudentData); 
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+    const { user: authUser } = useAuth();
+
+    // Debug: registrar montaje/desmontaje y cambios en el contexto de auth
+    useEffect(() => {
+        console.log("Signup mounted");
+        return () => console.log("Signup unmounted");
+    }, []);
+
+    useEffect(() => {
+        console.log("Auth user changed in Signup:", authUser);
+    }, [authUser]);
 
   // 💡 2. Inicializar formData al montar (por si acaso)
   useEffect(() => {
@@ -122,14 +134,61 @@ export default function Signup() {
 };
 // Tu componente de Registro con la estructura de 3 columnas optimizada
 return (
-    // Utilizamos la clase de centrado forzado para asegurar que esté en el medio
-    <div className="fixed-center-wrapper">
-      
-      <form
-        onSubmit={handleSignup}
-        // Aplicamos la clase de tarjeta que permite el scroll vertical (signup-card)
-        className="login-card signup-card animate-fadeIn"
-      >
+        // Usamos el mismo fondo que en Login: imagen de fondo + overlay translúcido
+        <div
+            className="login-bg"
+            style={{
+                minHeight: "100vh",
+                width: "100vw",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                position: "relative",
+                overflow: "hidden",
+            }}
+        >
+            {/* Fondo con imagen y overlay translúcido (igual que en Login) */}
+            <div
+                style={{
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    backgroundImage: "url('/fondo.png')",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    backgroundRepeat: "no-repeat",
+                    zIndex: 0,
+                }}
+            />
+            <div
+                style={{
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    background: "rgba(255,255,255,0.7)",
+                    zIndex: 1,
+                }}
+            />
+
+            <form
+                onSubmit={handleSignup}
+                // Aplicamos la clase de tarjeta que permite el scroll vertical (signup-card)
+                className="login-card signup-card"
+                style={{
+                    maxWidth: "650px",
+                    width: "100%",
+                    margin: "2rem auto",
+                    padding: "3rem",
+                    borderRadius: "1.2rem",
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+                    background: "rgba(255,255,255,0.92)",
+                    backdropFilter: "blur(2px)",
+                    position: "relative",
+                    zIndex: 2,
+                }}
+            >
         
         {/* Nuevo Encabezado con Logo y Bienvenida (ajustado para Registro) */}
         <div className="login-header-wrapper">
