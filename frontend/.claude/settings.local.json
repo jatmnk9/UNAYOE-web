@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Administrador/Documents/Tarea/UNAYOE-web/**)",
+      "Bash(npx:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(xargs sed:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

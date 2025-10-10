@@ -10,7 +10,6 @@ import StudentPortal from "./pages/StudentPortal";
 import PsychologistPortal from "./pages/PsychologistPortal";
 import SeguimientoDiario from "./pages/SeguimientoDiario";
 import StudentReport from "./pages/StudentReport";
-import PsychologistDashboard from "./pages/PsychologistDashboard";
 import MiDiarioDeBienestar from "./pages/MiDiarioDeBienestar";
 import StudentDashboard from "./pages/StudentDashboard";
 import Recomendaciones from "./pages/Recomendaciones";
@@ -19,11 +18,19 @@ import MisFavoritos from "./pages/MisFavoritos";
 import StudentAttendance from "./pages/StudentAttendance";
 import SeguimientoCitas from "./pages/SeguimientoCitas";
 
-// ✅ RUTA PRIVADA integrada
+// Páginas de Citas - Estudiante
+import MisCitas from "./pages/citas/estudiante/MisCitas";
+import CrearCita from "./pages/citas/estudiante/CrearCita";
+import EditarCita from "./pages/citas/estudiante/EditarCita";
+
+// Páginas de Citas - Psicólogo
+import CitasAsignadas from "./pages/citas/psicologo/CitasAsignadas";
+import DashboardCitas from "./pages/citas/psicologo/DashboardCitas";
+
+// RUTA PRIVADA integrada
 function PrivateRoute({ children, role }) {
   const { user } = useContext(AuthContext);
   
-  // 1. Si NO hay usuario, siempre redirige a /login (solución al flujo de Home)
   if (!user) return <Navigate to="/login" />;
   
   // 2. Si el usuario está logueado pero intenta acceder a un rol incorrecto
@@ -74,6 +81,11 @@ export default function App() {
         <Route path="favoritos" element={<MisFavoritos />} />
         <Route path="asistencia" element={<StudentAttendance />} />
         <Route path="seguimiento-citas" element={<SeguimientoCitas />} />
+        
+        {/* Rutas de Citas - Estudiante */}
+        <Route path="citas" element={<MisCitas />} />
+        <Route path="citas/crear" element={<CrearCita />} />
+        <Route path="citas/editar/:id" element={<EditarCita />} />
       </Route>
 
       {/* =======================================
@@ -90,8 +102,11 @@ export default function App() {
         <Route index element={<PsychologistDashboard />} />
         <Route path="seguimiento" element={<SeguimientoDiario />} />
         <Route path="seguimiento/:studentId" element={<StudentReport />} />
-
         <Route path="seguimiento-citas" element={<SeguimientoCitas />} />
+        
+        {/* Rutas de Citas - Psicólogo */}
+        <Route path="citas" element={<CitasAsignadas />} />
+        <Route path="citas/dashboard" element={<DashboardCitas />} />
       </Route>
 
       {/* Catch-all */}
