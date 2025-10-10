@@ -21,7 +21,7 @@ export default function PsychologistPortal() {
                 ? "sidebar-nav-button active"
                 : "sidebar-nav-button";
         }
-        return currentPath.startsWith(path)
+        return currentPath === path
             ? "sidebar-nav-button active"
             : "sidebar-nav-button";
     };

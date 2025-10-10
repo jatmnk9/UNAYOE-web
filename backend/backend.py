@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 from transformers import pipeline
 import nltk
+import google.generativeai as genai
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from collections import Counter
@@ -134,7 +135,31 @@ def preprocesar_texto(texto):
     tokens_limpios = [token for token in tokens if token not in stop_words and len(token) > 2]
     return " ".join(tokens_limpios), tokens_limpios
 
+@app.post("/attendance-insight")
+async def generate_attendance_insight(payload: dict):
+    texts = payload.get("texts", [])
+    if not texts:
+        raise HTTPException(status_code=400, detail="No se proporcionaron aprendizajes.")
 
+    prompt = (
+        "Eres un psicólogo universitario. Analiza brevemente los siguientes aprendizajes obtenidos por el estudiante en sus citas y genera:\n"
+        "- Un resumen breve (máximo 3 líneas).\n"
+        "- Una recomendación breve y concreta como plan de acción para la siguiente sesión (máximo 2 líneas).\n"
+        "El resultado debe estar en español, estar en prosa, ser breve y ser útil para el psicólogo.\n\n"
+    )
+    for idx, t in enumerate(texts):
+        prompt += f"Aprendizaje {idx+1}: {t}\n"
+    prompt += "\nInsight y plan de acción:"
+
+    try:
+        genai.configure(api_key="AIzaSyBJ0fo-zWzwu4licYxom3bYXLtB5qoal4k")
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        response = model.generate_content(prompt)
+        summary = response.text.strip()
+        return {"summary": summary}
+    except Exception as e:
+        print(f"Error en Gemini: {e}")
+        raise HTTPException(status_code=500, detail=f"Error generando insight: {e}")
 
 @app.post("/usuarios/estudiantes")
 async def crear_estudiante(estudiante: Estudiante):
@@ -349,6 +374,57 @@ async def analyze_notes(notes: List[Note]):
     analysis_images = crear_visualizaciones(df_analizado)
     
     return analysis_images
+
+@app.get("/analyze-asistencia/{user_id}")
+async def analyze_asistencia_aprendizaje(user_id: str):
+    """
+    Obtiene todos los aprendizajes obtenidos de la tabla ASISTENCIA para un usuario,
+    los analiza y devuelve gráficos Base64 igual que el reporte de diario.
+    """
+    # 1. Obtener aprendizajes de la tabla ASISTENCIA
+    response = supabase.table("asistencia").select("id_asistencia, aprendizaje_obtenido, fecha_atencion").eq("id_usuario", user_id).order("fecha_atencion", desc=True).execute()
+    data = response.data or []
+
+    if not data:
+        return {"message": "No hay registros de asistencia para este usuario", "analysis": {}, "notes": []}
+
+    # 2. Convertir a DataFrame y renombrar columna para reutilizar la lógica
+    df = pd.DataFrame(data).rename(columns={'aprendizaje_obtenido': 'note'})
+
+    # 3. Analizar los aprendizajes
+    df_analizado = analizar_diario_completo(df)
+
+    # 4. Crear visualizaciones
+    analysis_images = crear_visualizaciones(df_analizado)
+
+    return {
+        "message": "Análisis de aprendizajes completado con éxito",
+        "analysis": analysis_images,
+        "notes": data
+    }
+
+@app.post("/attendance-chatbot")
+async def attendance_chatbot(payload: dict):
+    context = payload.get("context", {})
+    question = payload.get("question", "")
+    if not question:
+        raise HTTPException(status_code=400, detail="No se proporcionó pregunta.")
+
+    # Construye el prompt solo con emociones y sentimientos
+    prompt = "Contexto del estudiante:\n"
+    if context.get("sentimientos"):
+        prompt += f"Sentimientos: {context['sentimientos']}\n"
+    if context.get("emociones"):
+        prompt += f"Emociones: {context['emociones']}\n"
+    prompt += f"\nConsulta del psicólogo: {question}\nRespuesta:"
+
+    # Gemini
+    genai.configure(api_key="AIzaSyBJ0fo-zWzwu4licYxom3bYXLtB5qoal4k")
+    model = genai.GenerativeModel("gemini-2.5-flash")
+    response = model.generate_content(prompt)
+    answer = response.text.strip()
+    return {"answer": answer}
+
 # 🔑 NUEVO ENDPOINT: Listar estudiantes
 @app.get("/psychologist/students")
 async def get_students():

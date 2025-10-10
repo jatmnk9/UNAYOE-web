@@ -1,7 +1,7 @@
 // StudentPortal.jsx
 import { useAuth } from "../context/AuthContext";
 import { Link, Outlet, useLocation } from "react-router-dom"; 
-import { Home as HomeIcon, Heart,BookOpen,Clapperboard, LogOut } from 'lucide-react';
+import { Home as HomeIcon, Heart,BookOpen,Clapperboard, LogOut, NotebookPen } from 'lucide-react';
 
 export default function StudentPortal() {
   // 💡 CORRECCIÓN 1: Usar 'logout' y quitar 'signOutUser' y 'loading: authLoading'
@@ -102,7 +102,7 @@ export default function StudentPortal() {
             </Link>
 
             <Link
-                to={`${baseUrl}/seguimiento-citas`}
+                to={`${baseUrl}/asistencia`}
                 className={getNavLinkClass(`${baseUrl}/seguimiento-citas`)}
             >
                 <NotebookPen className="sidebar-nav-icon" />Seguimiento de Citas

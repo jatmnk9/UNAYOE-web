@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import Chatbot from "../components/Chatbot";
 
 const initialAnalysis = {
     sentiments: null,
@@ -367,6 +368,13 @@ export default function StudentAttendanceReport() {
                                 );
                             })}
                         </div>
+                        <Chatbot
+                            context={{
+                                sentimientos: analysis.sentiments,
+                                emociones: analysis.emotions,
+                                resumen: insight
+                            }}
+                        />
                     </>
                 )}
             </div>
