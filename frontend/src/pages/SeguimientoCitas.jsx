@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function SeguimientoDiario() {
+export default function SeguimientoCitas() {
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
@@ -25,8 +25,9 @@ export default function SeguimientoDiario() {
         fetchStudents();
     }, []);
 
+    // Cambia la ruta aquí:
     const handleViewReport = (studentId) => {
-        navigate(`/psychologist/seguimiento/${studentId}`);
+        navigate(`/psychologist/seguimiento-citas/${studentId}`);
     };
 
     return (
@@ -56,7 +57,7 @@ export default function SeguimientoDiario() {
                         paddingBottom: "0.7rem"
                     }}
                 >
-                    Seguimiento Diario de Pacientes
+                    Seguimiento de Citas
                 </h2>
 
                 <div style={{ marginBottom: "1.5rem", textAlign: "left" }}>
@@ -95,7 +96,7 @@ export default function SeguimientoDiario() {
                     </div>
                 ) : students.length === 0 ? (
                     <p style={{ color: "var(--color-text-gray)", textAlign: "center", fontSize: "1.1rem" }}>
-                        No hay estudiantes asignados para seguimiento.
+                        No hay estudiantes asignados para citas.
                     </p>
                 ) : (
                     <div style={{

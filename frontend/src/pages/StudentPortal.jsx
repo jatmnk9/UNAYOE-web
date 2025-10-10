@@ -102,7 +102,7 @@ export default function StudentPortal() {
             </Link>
 
             <Link
-                to={`${baseUrl}/seguimiento-citas`}
+                to={`${baseUrl}/asistencia`}
                 className={getNavLinkClass(`${baseUrl}/seguimiento-citas`)}
             >
                 <NotebookPen className="sidebar-nav-icon" />Seguimiento de Citas

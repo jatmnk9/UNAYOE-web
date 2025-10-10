@@ -18,6 +18,7 @@ import MisFavoritos from "./pages/MisFavoritos";
 
 import StudentAttendance from "./pages/StudentAttendance";
 import SeguimientoCitas from "./pages/SeguimientoCitas";
+import StudentAttendanceReport from "./pages/StudentAttendanceReport";
 
 // ✅ RUTA PRIVADA integrada
 function PrivateRoute({ children, role }) {
@@ -92,6 +93,7 @@ export default function App() {
         <Route path="seguimiento/:studentId" element={<StudentReport />} />
 
         <Route path="seguimiento-citas" element={<SeguimientoCitas />} />
+        <Route path="seguimiento-citas/:studentId" element={<StudentAttendanceReport />} />
       </Route>
 
       {/* Catch-all */}
