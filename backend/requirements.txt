@@ -1,90 +1,48 @@
 # =========================================================
-# PYTHON
+# FASTAPI FRAMEWORK
 # =========================================================
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+python-multipart==0.0.12
 
 # =========================================================
-# ENTORNOS VIRTUALES
+# VALIDACIÓN DE DATOS
 # =========================================================
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
-.claude
+pydantic==2.9.2
+pydantic-settings==2.6.0
 
 # =========================================================
-# VARIABLES DE ENTORNO
+# BASE DE DATOS
 # =========================================================
-.env
-.env.local
-.env.*.local
+supabase==2.9.0
 
 # =========================================================
-# IDE
+# NLP & MACHINE LEARNING
 # =========================================================
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
+transformers==4.46.0
+torch>=2.0.0
+nltk==3.9.1
+scikit-learn==1.5.2
 
 # =========================================================
-# JUPYTER NOTEBOOK
+# PROCESAMIENTO DE DATOS
 # =========================================================
-.ipynb_checkpoints
+pandas==2.2.3
+numpy==2.1.2
 
 # =========================================================
-# PYTEST
+# VISUALIZACIÓN
 # =========================================================
-.pytest_cache/
-.coverage
-htmlcov/
+matplotlib==3.9.2
+wordcloud>=1.9.0  # Usa versión flexible para compatibilidad
 
 # =========================================================
-# MYPY
+# HTTP & NETWORKING
 # =========================================================
-.mypy_cache/
-.dmypy.json
-dmypy.json
+httpx==0.27.2
+email-validator
 
 # =========================================================
-# MODELOS NLP (DEMASIADO GRANDES)
+# DESARROLLO
 # =========================================================
-models/
-*.bin
-*.onnx
-
-# =========================================================
-# LOGS
-# =========================================================
-*.log
-logs/
-
-# =========================================================
-# ARCHIVOS TEMPORALES
-# =========================================================
-*.tmp
-*.temp
+python-dotenv==1.0.1
