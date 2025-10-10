@@ -87,8 +87,9 @@ export default function StudentPortal() {
                             <BookOpen className="sidebar-nav-icon" />Mi Diario de Bienestar
                         </Link>
 
-                        {/* Enlace al Diario */}
+                        {/* Enlace a PsicoTips */}
                         <Link
+                            to={`${baseUrl}/recomendaciones`}
                             className={getNavLinkClass(`${baseUrl}/recomendaciones`)}
                         >
                             <Clapperboard className="sidebar-nav-icon" />PsicoTips
@@ -112,6 +113,11 @@ export default function StudentPortal() {
                     </nav>
                 </div>
             </aside>
+
+            {/* Contenido Principal - Aquí se renderizan las rutas anidadas */}
+            <main className="portal-main-content">
+                <Outlet />
+            </main>
         </div>
     );
 }

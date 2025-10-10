@@ -26,6 +26,7 @@ import EditarCita from "./pages/citas/estudiante/EditarCita";
 // Páginas de Citas - Psicólogo
 import CitasAsignadas from "./pages/citas/psicologo/CitasAsignadas";
 import DashboardCitas from "./pages/citas/psicologo/DashboardCitas";
+import PsychologistDashboard from "./pages/PsychologistDashboard";
 
 // RUTA PRIVADA integrada
 function PrivateRoute({ children, role }) {
@@ -99,7 +100,7 @@ export default function App() {
           </PrivateRoute>
         }
       >
-        <Route index element={<PsychologistDashboard />} />
+        <Route index element={<PsychologistDashboard/>} />
         <Route path="seguimiento" element={<SeguimientoDiario />} />
         <Route path="seguimiento/:studentId" element={<StudentReport />} />
         <Route path="seguimiento-citas" element={<SeguimientoCitas />} />

@@ -2,7 +2,7 @@
 
 import { useAuth } from "../context/AuthContext";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Home as HomeIcon, NotebookPen, LogOut } from 'lucide-react';
+import { Home as HomeIcon, NotebookPen, LogOut, Calendar, LayoutDashboard } from 'lucide-react';
 
 export default function PsychologistPortal() {
     const { user, logout } = useAuth();
@@ -70,6 +70,20 @@ export default function PsychologistPortal() {
                             className={getNavLinkClass(`${baseUrl}/seguimiento-citas`)}
                         >
                             <NotebookPen className="sidebar-nav-icon" />Seguimiento de Citas
+                        </Link>
+                        
+                        {/* Gestión de Citas */}
+                        <Link
+                            to={`${baseUrl}/citas`}
+                            className={getNavLinkClass(`${baseUrl}/citas`)}
+                        >
+                            <Calendar className="sidebar-nav-icon" />Citas Asignadas
+                        </Link>
+                        <Link
+                            to={`${baseUrl}/citas/dashboard`}
+                            className={getNavLinkClass(`${baseUrl}/citas/dashboard`)}
+                        >
+                            <LayoutDashboard className="sidebar-nav-icon" />Dashboard de Citas
                         </Link>
                     </nav>
                 </div>

@@ -54,6 +54,10 @@ export default function CrearCita() {
       // Convertir la fecha al formato ISO 8601 requerido por el backend
       const fechaISO = new Date(formData.fecha_cita).toISOString().slice(0, 19);
       
+      console.log("Fecha ISO:", fechaISO);
+      console.log("titulo:", formData.titulo);
+      console.log("fecha_cita:", formData.fecha_cita);
+      
       await citasService.crearCita(user.id, {
         titulo: formData.titulo,
         fecha_cita: fechaISO,
