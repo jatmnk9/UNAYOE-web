@@ -72,8 +72,8 @@ export default function App() {
         <Route path="diario" element={<MiDiarioDeBienestar />} />
         <Route path="recomendaciones" element={<Recomendaciones />} />
         <Route path="favoritos" element={<MisFavoritos />} />
-
         <Route path="asistencia" element={<StudentAttendance />} />
+        <Route path="seguimiento-citas" element={<SeguimientoCitas />} />
       </Route>
 
       {/* =======================================
