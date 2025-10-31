@@ -1,19 +1,35 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import SmartRiskBadge from '../components/SmartRiskBadge';
 
 export default function SeguimientoDiario() {
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+    const { user } = useAuth();
 
     const fetchStudents = async () => {
         try {
-            const res = await fetch('http://127.0.0.1:8000/psychologist/students');
-            if (!res.ok) {
-                throw new Error(`HTTP error! status: ${res.status}`);
+            // Preferimos el endpoint con alertas; si falla, hacemos fallback al listado simple.
+            const pid = user?.id ? `?psychologist_id=${encodeURIComponent(user.id)}` : '';
+            const resAlerts = await fetch(`http://127.0.0.1:8000/psychologist/students-alerts${pid}`);
+            if (resAlerts.ok) {
+                const dataAlerts = await resAlerts.json();
+                setStudents((dataAlerts?.data || []).map(s => ({
+                    id: s.id,
+                    nombre: s.nombre,
+                    apellido: s.apellido,
+                    codigo_alumno: s.codigo_alumno,
+                    risk: s.risk,
+                    alert_message: s.alert_message,
+                })));
+            } else {
+                const res = await fetch(`http://127.0.0.1:8000/psychologist/students${pid}`);
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                const result = await res.json();
+                setStudents(result.data || []);
             }
-            const result = await res.json();
-            setStudents(result.data || []);
         } catch (error) {
             console.error("Error al cargar estudiantes:", error);
         } finally {
@@ -23,7 +39,8 @@ export default function SeguimientoDiario() {
 
     useEffect(() => {
         fetchStudents();
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.id]);
 
     const handleViewReport = (studentId) => {
         navigate(`/psychologist/seguimiento/${studentId}`);
@@ -127,6 +144,16 @@ export default function SeguimientoDiario() {
                                     }}>
                                         Código
                                     </th>
+                                    <th style={{
+                                        padding: "1rem",
+                                        textAlign: "left",
+                                        fontSize: "1rem",
+                                        fontWeight: 700,
+                                        color: "var(--color-dark)",
+                                        letterSpacing: "0.04em"
+                                    }}>
+                                        Alerta
+                                    </th>
                                     <th style={{ padding: "1rem" }}></th>
                                 </tr>
                             </thead>
@@ -147,6 +174,25 @@ export default function SeguimientoDiario() {
                                             color: "var(--color-text-gray)"
                                         }}>
                                             {student.codigo_alumno}
+                                        </td>
+                                        <td style={{
+                                            padding: "1rem",
+                                            fontSize: "0.95rem",
+                                            color: "var(--color-text-gray)",
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.6rem'
+                                        }}>
+                                            {student.risk ? (
+                                                <>
+                                                    <SmartRiskBadge risk={student.risk} />
+                                                    <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>
+                                                        {student.alert_message}
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <span style={{ color: '#6b7280' }}>Sin señales de tristeza</span>
+                                            )}
                                         </td>
                                         <td style={{ padding: "1rem", textAlign: "right" }}>
                                             <button
