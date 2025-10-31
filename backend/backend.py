@@ -21,7 +21,11 @@ from fastapi import Depends
 import json # Necesario para manejar la serialización de Supabase si los tokens son complejos
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
+import traceback
+import requests
 from pydantic import BaseModel
+from fastapi import Request
+
 # =========================================================
 # 🧠 SISTEMA DE RECOMENDACIONES BASADO EN CONTENIDO
 # =========================================================
@@ -70,6 +74,19 @@ class Psicologo(BaseModel):
     estado: str
     id: str
 
+class AsistenciaRequest(BaseModel):
+    id_usuario: str
+    fecha_atencion: str
+    nro_sesion: int
+    modalidad_atencion: str
+    motivo_atencion: str
+    detalle_problema_actual: str
+    acude_profesional_particular: bool
+    diagnostico_particular: str | None = None
+    tipo_tratamiento_actual: str
+    comodidad_unayoe: bool
+    aprendizaje_obtenido: str
+
 
 # Define la estructura de datos para una nota (Añadido user_id)
 class Note(BaseModel):
@@ -79,7 +96,6 @@ class Note(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
-
 
 # Inicializa la aplicación FastAPI
 app = FastAPI(title="API de Análisis de Bienestar")
@@ -160,6 +176,15 @@ async def generate_attendance_insight(payload: dict):
     except Exception as e:
         print(f"Error en Gemini: {e}")
         raise HTTPException(status_code=500, detail=f"Error generando insight: {e}")
+    
+@app.post("/asistencia")
+async def registrar_asistencia(asistencia: AsistenciaRequest):
+    try:
+        data = asistencia.dict()
+        response = supabase.table("asistencia").insert(data).execute()
+        return {"message": "Asistencia registrada con éxito", "data": response.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al registrar asistencia: {e}")
 
 @app.post("/usuarios/estudiantes")
 async def crear_estudiante(estudiante: Estudiante):
@@ -250,23 +275,8 @@ async def login_user(credentials: LoginRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-# 🔑 NUEVA RUTA: GET para obtener las notas del estudiante (soluciona el 404)
-@app.get("/notas/{user_id}")
-async def get_notas_by_user(user_id: str):
-    """Obtiene todas las notas para un usuario específico desde Supabase."""
-    try:
-        response = supabase.table("notas").select("*").eq("usuario_id", user_id).order("created_at", desc=True).execute()
-        
-        # Supabase devuelve datos en 'response.data'
-        if not response.data:
-             return {"message": "No se encontraron notas para este usuario", "data": []}
-             
-        # La tabla 'notas' en el frontend espera las propiedades 'id', 'nota', 'sentimiento', 'emocion', 'emocion_score', 'created_at'.
-        return {"message": "Notas recuperadas con éxito", "data": response.data}
-
-    except Exception as e:
-        print(f"Error al recuperar notas: {e}")
-        raise HTTPException(status_code=500, detail=f"Error interno al buscar notas: {e}")
+# (Nota: la ruta /notas/{user_id} está definida más abajo; se eliminó esta definición duplicada
+# para evitar comportamiento inesperado y facilitar la depuración.)
 
 
 # 🔑 RUTA POST CORREGIDA: user_id ahora viene en el cuerpo de la petición Note
@@ -295,8 +305,99 @@ async def guardar_nota(note_data: Note):
             "tokens": tokens 
         }]).execute()
         
+        # GENERATIVE AI: intentar crear un mensaje de acompañamiento usando Gemini
+        accompaniment_text = None
+        try:
+            def generate_accompaniment(texto):
+                api_key = "AIzaSyBx_X4hSpLg5yzXZujgrShUIv6P1OSFLME"
+                if not api_key:
+                    return None
+
+                # Modelo por defecto (puedes cambiarlo con GEMINI_MODEL env var)
+                model = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+                # Endpoint generateContent (usa header X-goog-api-key según tu ejemplo)
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+
+                # Construir el prompt: instrucción + nota del usuario
+                prompt_text = (
+                    "Eres un asistente empático que ofrece acompañamiento emocional breve y respetuoso. "
+                    "Después de leer la nota del usuario, responde con un mensaje de apoyo que refleje lo que el usuario escribió, "
+                    "ofrece una observación o consejo breve y termina siempre con una frase motivadora corta. "
+                    "No ofrezcas diagnóstico médico ni consejos terapéuticos detallados; si es necesario, sugiere buscar ayuda profesional. "
+                    "Responde en español.\n\n"
+                    f"Nota del usuario: {texto}\n\nRespuesta:"
+                )
+
+                payload = {
+                    "contents": [
+                        {"parts": [{"text": prompt_text}]}
+                    ]
+                }
+
+                headers = {
+                    "Content-Type": "application/json",
+                    "X-goog-api-key": api_key
+                }
+
+                r = requests.post(url, json=payload, headers=headers, timeout=10)
+                r.raise_for_status()
+                data = r.json()
+
+                # Extraer texto de la respuesta de generateContent de forma robusta
+                text_out = None
+                if isinstance(data, dict):
+                    # candidatos habituales: 'candidates' -> list of { 'content'|'output'|'parts': [{ 'text': ... }] }
+                    candidates = data.get('candidates') or data.get('outputs') or data.get('items')
+                    if candidates and isinstance(candidates, list) and len(candidates) > 0:
+                        first = candidates[0]
+                        # varias formas posibles
+                        if isinstance(first, dict):
+                            # 1) parts
+                            parts = first.get('parts') or first.get('content')
+                            if parts and isinstance(parts, list):
+                                # juntar textos de partes
+                                collected = []
+                                for p in parts:
+                                    if isinstance(p, dict) and p.get('text'):
+                                        collected.append(p.get('text'))
+                                if collected:
+                                    text_out = ' '.join(collected)
+                            # 2) content directo
+                            if not text_out:
+                                text_out = first.get('content') or first.get('output') or first.get('text')
+                    # fallback: buscar cualquier cadena en top-level
+                    if not text_out:
+                        # intentar recorrer y concatenar campos que parezcan texto
+                        def pick_text(obj):
+                            if isinstance(obj, str):
+                                return obj
+                            if isinstance(obj, dict):
+                                for k in ('content', 'output', 'text'):
+                                    if k in obj and isinstance(obj[k], str):
+                                        return obj[k]
+                                for v in obj.values():
+                                    t = pick_text(v)
+                                    if t:
+                                        return t
+                            if isinstance(obj, list):
+                                for item in obj:
+                                    t = pick_text(item)
+                                    if t:
+                                        return t
+                            return None
+
+                        text_out = pick_text(data)
+
+                return text_out
+
+            accompaniment_text = generate_accompaniment(nota_texto)
+        except Exception as e:
+            print(f"Error generando acompañamiento con Gemini: {e}")
+            traceback.print_exc()
+
         # Devolver los datos recién insertados (para que el frontend actualice la lista)
-        return {"message": "Nota guardada con éxito", "data": response.data}
+        # Incluimos el acompañamiento en la respuesta para que el frontend lo muestre si lo desea
+        return {"message": "Nota guardada con éxito", "data": response.data, "accompaniment": accompaniment_text}
     except Exception as e:
         print(f"Error al guardar nota: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -449,16 +550,16 @@ async def get_notas_by_user(user_id: str):
     """Obtiene todas las notas para un usuario específico desde Supabase."""
     try:
         response = supabase.table("notas").select("*").eq("usuario_id", user_id).order("created_at", desc=True).execute()
-        
         # Corrección: Asegurar indentación de 4 espacios
-        if not response.data:
+        if not response or not getattr(response, 'data', None):
             return {"message": "No se encontraron notas para este usuario", "data": []}
-            
+
         return {"message": "Notas recuperadas con éxito", "data": response.data}
     except Exception as e:
         print(f"Error al recuperar notas: {e}")
-        # Corrección: Asegurar indentación de 4 espacios
-        raise HTTPException(status_code=500, detail=f"Error interno al buscar notas: {e}")
+        traceback.print_exc()
+        # Proporcionar detalle reducido en la respuesta para no exponer secretos
+        raise HTTPException(status_code=500, detail="Error interno al buscar notas. Revisa logs del servidor para más detalles.")
 
 # ---
 
@@ -668,3 +769,6 @@ async def obtener_recomendaciones_favoritas(user_id: str):
     except Exception as e:
         print(f"Error al obtener recomendaciones favoritas: {e}")
         raise HTTPException(status_code=500, detail=f"Error interno al buscar favoritos: {e}")
+    
+
+    # main.py

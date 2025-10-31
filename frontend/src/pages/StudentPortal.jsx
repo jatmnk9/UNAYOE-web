@@ -1,8 +1,7 @@
 // StudentPortal.jsx
 import { useAuth } from "../context/AuthContext";
 import { Link, Outlet, useLocation } from "react-router-dom"; 
-import { Home as HomeIcon, Heart,BookOpen,Clapperboard, LogOut, NotebookPen } from 'lucide-react';
-import ChatButton from "../components/ChatbotButton"; // Importa el botón del chatbot
+import { Home as HomeIcon, NotebookPen,Heart,BookOpen,Clapperboard, LogOut } from 'lucide-react';
 
 export default function StudentPortal() {
   // 💡 CORRECCIÓN 1: Usar 'logout' y quitar 'signOutUser' y 'loading: authLoading'

@@ -1,35 +1,26 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
+import { useAuth } from "../context/AuthContext"; // Igual que en MiDiarioDeBienestar
 
 const steps = [
-  "Datos del Alumno",
   "Datos de la Consulta",
   "Experiencia y Aprendizaje"
 ];
 
 export default function StudentAttendance() {
+  const { user } = useAuth(); // user.id es el id_usuario
+
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    nombres: "",
-    sexo: "",
-    edad: "",
-    celular: "",
-    correo: "",
-    codigo: "",
-    base: "",
-    escuela: "",
-    semestre: "",
-    ciclo: "",
-    condicion: "",
-    fecha: "",
-    sesion: "",
-    modalidad: "",
-    motivo: [],
-    detalle: "",
-    acude: "",
-    diagnostico: "",
-    tratamiento: "",
-    comodo: "",
-    aprendizaje: "",
+    fecha_atencion: "",
+    nro_sesion: "",
+    modalidad_atencion: "",
+    motivo_atencion: [],
+    detalle_problema_actual: "",
+    acude_profesional_particular: "",
+    diagnostico_particular: "",
+    tipo_tratamiento_actual: "",
+    comodidad_unayoe: "",
+    aprendizaje_obtenido: "",
   });
 
   const handleChange = (e) => {
@@ -37,10 +28,12 @@ export default function StudentAttendance() {
     if (type === "checkbox") {
       setForm((prev) => ({
         ...prev,
-        motivo: checked
-          ? [...prev.motivo, value]
-          : prev.motivo.filter((m) => m !== value),
+        motivo_atencion: checked
+          ? [...prev.motivo_atencion, value]
+          : prev.motivo_atencion.filter((m) => m !== value),
       }));
+    } else if (type === "radio" && (name === "acude_profesional_particular" || name === "comodidad_unayoe")) {
+      setForm((prev) => ({ ...prev, [name]: value === "SI" }));
     } else {
       setForm((prev) => ({ ...prev, [name]: value }));
     }
@@ -56,9 +49,53 @@ export default function StudentAttendance() {
     if (step > 0) setStep(step - 1);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("¡Registro enviado!");
+    if (!user?.id) {
+      alert("Debes iniciar sesión para registrar asistencia.");
+      return;
+    }
+    try {
+      const payload = {
+        id_usuario: user.id, // Usa el id del usuario autenticado
+        fecha_atencion: form.fecha_atencion,
+        nro_sesion: parseInt(form.nro_sesion),
+        modalidad_atencion: form.modalidad_atencion,
+        motivo_atencion: form.motivo_atencion.join(", "),
+        detalle_problema_actual: form.detalle_problema_actual,
+        acude_profesional_particular: form.acude_profesional_particular,
+        diagnostico_particular: form.diagnostico_particular,
+        tipo_tratamiento_actual: form.tipo_tratamiento_actual,
+        comodidad_unayoe: form.comodidad_unayoe,
+        aprendizaje_obtenido: form.aprendizaje_obtenido,
+      };
+      const res = await fetch("http://127.0.0.1:8000/asistencia", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      if (res.ok) {
+        alert("¡Registro de asistencia enviado!");
+        setStep(0);
+        setForm({
+          fecha_atencion: "",
+          nro_sesion: "",
+          modalidad_atencion: "",
+          motivo_atencion: [],
+          detalle_problema_actual: "",
+          acude_profesional_particular: "",
+          diagnostico_particular: "",
+          tipo_tratamiento_actual: "",
+          comodidad_unayoe: "",
+          aprendizaje_obtenido: "",
+        });
+      } else {
+        alert(result.detail || "Error al registrar asistencia");
+      }
+    } catch (err) {
+      alert("Error al conectar con el servidor");
+    }
   };
 
   // Estilos modernos para inputs, radios y checkboxes
@@ -73,7 +110,7 @@ export default function StudentAttendance() {
     outline: "none",
     background: "#fff",
     transition: "border 0.2s, box-shadow 0.2s",
-    boxSizing: "border-box" // ← Esto evita que se desborde
+    boxSizing: "border-box"
   };
 
   const radioStyle = {
@@ -129,37 +166,51 @@ export default function StudentAttendance() {
           ))}
         </div>
         <form onSubmit={step === steps.length - 1 ? handleSubmit : handleNext} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          {/* Paso 1: Datos del Alumno */}
+          {/* Paso 1: Datos de la Consulta */}
           {step === 0 && (
             <section>
-              <h2 style={{ fontWeight: 600, fontSize: "1.15rem", color: "var(--color-dark)", marginBottom: "1rem" }}>Datos del Alumno</h2>
-              <input name="nombres" required placeholder="Apellidos y Nombres *" value={form.nombres} onChange={handleChange} style={inputStyle} />
+              <h2 style={{ fontWeight: 600, fontSize: "1.15rem", color: "var(--color-dark)", marginBottom: "1rem" }}>Datos de la Consulta</h2>
+              <input type="date" name="fecha_atencion" required placeholder="Fecha de la atención *" value={form.fecha_atencion} onChange={handleChange} style={inputStyle} />
+              <input name="nro_sesion" required placeholder="Nro de sesión *" value={form.nro_sesion} onChange={handleChange} style={inputStyle} type="number" min={1} />
               <div style={{ marginBottom: "0.7rem" }}>
-                <label style={{ fontWeight: 500 }}>Sexo *</label><br />
-                <label><input type="radio" name="sexo" value="FEMENINO" required checked={form.sexo === "FEMENINO"} onChange={handleChange} style={radioStyle} />Femenino</label>{" "}
-                <label><input type="radio" name="sexo" value="MASCULINO" checked={form.sexo === "MASCULINO"} onChange={handleChange} style={radioStyle} />Masculino</label>{" "}
-                <label><input type="radio" name="sexo" value="OTRO" checked={form.sexo === "OTRO"} onChange={handleChange} style={radioStyle} />Otro</label>
+                <label style={{ fontWeight: 500 }}>Modalidad de la atención psicológica *</label><br />
+                <label><input type="radio" name="modalidad_atencion" value="PRESENCIAL" checked={form.modalidad_atencion === "PRESENCIAL"} onChange={handleChange} style={radioStyle} />Presencial</label>{" "}
+                <label><input type="radio" name="modalidad_atencion" value="VIRTUAL" checked={form.modalidad_atencion === "VIRTUAL"} onChange={handleChange} style={radioStyle} />Virtual</label>{" "}
+                <label><input type="radio" name="modalidad_atencion" value="TELECONSULTA" checked={form.modalidad_atencion === "TELECONSULTA"} onChange={handleChange} style={radioStyle} />Teleconsulta</label>
               </div>
-              <input name="edad" required placeholder="Edad *" value={form.edad} onChange={handleChange} style={inputStyle} />
-              <input name="celular" required placeholder="Celular *" value={form.celular} onChange={handleChange} style={inputStyle} />
-              <input name="correo" required placeholder="Correo institucional *" value={form.correo} onChange={handleChange} style={inputStyle} />
-              <input name="codigo" required placeholder="Código de estudiante *" value={form.codigo} onChange={handleChange} style={inputStyle} />
-              <input name="base" required placeholder="Base *" value={form.base} onChange={handleChange} style={inputStyle} />
               <div style={{ marginBottom: "0.7rem" }}>
-                <label style={{ fontWeight: 500 }}>Escuela profesional *</label><br />
-                <label><input type="radio" name="escuela" value="SISTEMAS" checked={form.escuela === "SISTEMAS"} onChange={handleChange} style={radioStyle} />Sistemas</label>{" "}
-                <label><input type="radio" name="escuela" value="SOFTWARE" checked={form.escuela === "SOFTWARE"} onChange={handleChange} style={radioStyle} />Software</label>{" "}
-                <label><input type="radio" name="escuela" value="C. COMPUTACIÓN" checked={form.escuela === "C. COMPUTACIÓN"} onChange={handleChange} style={radioStyle} />C. Computación</label>
+                <label style={{ fontWeight: 500 }}>Motivo de la atención *</label><br />
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.7rem" }}>
+                  {[
+                    "FACTOR EMOCIONAL",
+                    "FACTOR FAMILIAR",
+                    "RENDIMIENTO ACADÉMICO",
+                    "PROBLEMAS DE PAREJA",
+                    "PROBLEMAS CON DOCENTES",
+                    "PROBLEMAS CON COMPAÑEROS",
+                    "PROBLEMAS DE COMPORTAMIENTO",
+                    "PROBLEMAS DE ORIENTACIÓN VOCACIONAL",
+                    "DUELO POR PÉRDIDA DE FAMILIAR",
+                    "EVALUACIÓN BECA VIVIENDA",
+                    "OBSERVADO DE LA EVALUACIÓN PSICOLÓGICA ANUAL",
+                    "TUTORÍA PSICOLÓGICA - OBSERVADOS",
+                    "ORIENTACIÓN ACADÉMICA"
+                  ].map(m => (
+                    <label key={m} style={{
+                      background: form.motivo_atencion.includes(m) ? "var(--color-primary)" : "#f3f4f6",
+                      color: form.motivo_atencion.includes(m) ? "#fff" : "var(--color-dark)",
+                      padding: "0.4rem 0.8rem",
+                      borderRadius: "1rem",
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      transition: "background 0.2s, color 0.2s"
+                    }}>
+                      <input type="checkbox" name="motivo_atencion" value={m} checked={form.motivo_atencion.includes(m)} onChange={handleChange} style={checkboxStyle} />{m}
+                    </label>
+                  ))}
+                </div>
               </div>
-              <input name="semestre" required placeholder="Semestre actual *" value={form.semestre} onChange={handleChange} style={inputStyle} />
-              <input name="ciclo" required placeholder="Ciclo actual *" value={form.ciclo} onChange={handleChange} style={inputStyle} />
-              <div style={{ marginBottom: "0.7rem" }}>
-                <label style={{ fontWeight: 500 }}>Condición de alumno *</label><br />
-                <label><input type="radio" name="condicion" value="REGULAR" checked={form.condicion === "REGULAR"} onChange={handleChange} style={radioStyle} />Regular</label>{" "}
-                <label><input type="radio" name="condicion" value="1ERA. REPITENCIA" checked={form.condicion === "1ERA. REPITENCIA"} onChange={handleChange} style={radioStyle} />1era. Repitencia</label>{" "}
-                <label><input type="radio" name="condicion" value="2DA. REPITENCIA" checked={form.condicion === "2DA. REPITENCIA"} onChange={handleChange} style={radioStyle} />2da. Repitencia</label>{" "}
-                <label><input type="radio" name="condicion" value="3ERA. REPITENCIA" checked={form.condicion === "3ERA. REPITENCIA"} onChange={handleChange} style={radioStyle} />3era. Repitencia</label>
-              </div>
+              <input name="detalle_problema_actual" required placeholder="Detalle el problema actual *" value={form.detalle_problema_actual} onChange={handleChange} style={inputStyle} />
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem" }}>
                 <button type="button" onClick={handleNext} style={{
                   background: "var(--color-primary)",
@@ -177,96 +228,29 @@ export default function StudentAttendance() {
             </section>
           )}
 
-          {/* Paso 2: Datos de la Consulta */}
+          {/* Paso 2: Experiencia y Aprendizaje */}
           {step === 1 && (
             <section>
-              <h2 style={{ fontWeight: 600, fontSize: "1.15rem", color: "var(--color-dark)", marginBottom: "1rem" }}>Datos de la Consulta</h2>
-              <input type="date" name="fecha" required placeholder="Fecha de la atención *" value={form.fecha} onChange={handleChange} style={inputStyle} />
-              <div style={{ marginBottom: "0.7rem" }}>
-                <label style={{ fontWeight: 500 }}>Nro de sesión *</label><br />
-                {["1º","2º","3º","4º","5º","6º","7º","8º","9º","10º","11º A MÁS"].map(s => (
-                  <label key={s} style={{ marginRight: "0.7rem" }}>
-                    <input type="radio" name="sesion" value={s} checked={form.sesion === s} onChange={handleChange} style={radioStyle} />{s}
-                  </label>
-                ))}
-              </div>
-              <div style={{ marginBottom: "0.7rem" }}>
-                <label style={{ fontWeight: 500 }}>Modalidad de la atención psicológica *</label><br />
-                <label><input type="radio" name="modalidad" value="PRESENCIAL" checked={form.modalidad === "PRESENCIAL"} onChange={handleChange} style={radioStyle} />Presencial</label>{" "}
-                <label><input type="radio" name="modalidad" value="VIRTUAL" checked={form.modalidad === "VIRTUAL"} onChange={handleChange} style={radioStyle} />Virtual</label>{" "}
-                <label><input type="radio" name="modalidad" value="TELECONSULTA" checked={form.modalidad === "TELECONSULTA"} onChange={handleChange} style={radioStyle} />Teleconsulta</label>
-              </div>
-              <div style={{ marginBottom: "0.7rem" }}>
-                <label style={{ fontWeight: 500 }}>Motivo de la atención *</label><br />
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.7rem" }}>
-                  {["FACTOR EMOCIONAL","FACTOR FAMILIAR","RENDIMIENTO ACADÉMICO","PROBLEMAS DE PAREJA","PROBLEMAS CON DOCENTES","PROBLEMAS CON COMPAÑEROS","PROBLEMAS DE COMPORTAMIENTO","PROBLEMAS DE ORIENTACIÓN VOCACIONAL","DUELO POR PÉRDIDA DE FAMILIAR","EVALUACIÓN BECA VIVIENDA","OBSERVADO DE LA EVALUACIÓN PSICOLÓGICA ANUAL","TUTORÍA PSICOLÓGICA - OBSERVADOS","ORIENTACIÓN ACADÉMICA"].map(m => (
-                    <label key={m} style={{
-                      background: form.motivo.includes(m) ? "var(--color-primary)" : "#f3f4f6",
-                      color: form.motivo.includes(m) ? "#fff" : "var(--color-dark)",
-                      padding: "0.4rem 0.8rem",
-                      borderRadius: "1rem",
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      transition: "background 0.2s, color 0.2s"
-                    }}>
-                      <input type="checkbox" name="motivo" value={m} checked={form.motivo.includes(m)} onChange={handleChange} style={checkboxStyle} />{m}
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
-                <button type="button" onClick={handlePrev} style={{
-                  background: "#e5e7eb",
-                  color: "var(--color-dark)",
-                  fontWeight: 600,
-                  fontSize: "1.05rem",
-                  padding: "0.7rem 2rem",
-                  borderRadius: "0.7rem",
-                  border: "none",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.10)",
-                  cursor: "pointer",
-                  transition: "background 0.2s, box-shadow 0.2s"
-                }}>Anterior</button>
-                <button type="button" onClick={handleNext} style={{
-                  background: "var(--color-primary)",
-                  color: "#fff",
-                  fontWeight: 600,
-                  fontSize: "1.05rem",
-                  padding: "0.7rem 2rem",
-                  borderRadius: "0.7rem",
-                  border: "none",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.10)",
-                  cursor: "pointer",
-                  transition: "background 0.2s, box-shadow 0.2s"
-                }}>Siguiente</button>
-              </div>
-            </section>
-          )}
-
-          {/* Paso 3: Experiencia y Aprendizaje */}
-          {step === 2 && (
-            <section>
               <h2 style={{ fontWeight: 600, fontSize: "1.15rem", color: "var(--color-dark)", marginBottom: "1rem" }}>Experiencia y Aprendizaje</h2>
-              <textarea name="detalle" required placeholder="Detalle el problema actual *" value={form.detalle} onChange={handleChange} style={{ ...inputStyle, minHeight: "70px" }} />
               <div style={{ marginBottom: "0.7rem" }}>
                 <label style={{ fontWeight: 500 }}>¿Acude donde un profesional de la salud mental de manera particular? *</label><br />
-                <label><input type="radio" name="acude" value="SI" checked={form.acude === "SI"} onChange={handleChange} style={radioStyle} />Sí</label>{" "}
-                <label><input type="radio" name="acude" value="NO" checked={form.acude === "NO"} onChange={handleChange} style={radioStyle} />No</label>
+                <label><input type="radio" name="acude_profesional_particular" value="SI" checked={form.acude_profesional_particular === true} onChange={handleChange} style={radioStyle} />Sí</label>{" "}
+                <label><input type="radio" name="acude_profesional_particular" value="NO" checked={form.acude_profesional_particular === false} onChange={handleChange} style={radioStyle} />No</label>
               </div>
-              <input name="diagnostico" placeholder="Si su respuesta fue sí, ¿cuál fue su diagnóstico?" value={form.diagnostico} onChange={handleChange} style={inputStyle} />
+              <input name="diagnostico_particular" placeholder="Si su respuesta fue sí, ¿cuál fue su diagnóstico?" value={form.diagnostico_particular} onChange={handleChange} style={inputStyle} />
               <div style={{ marginBottom: "0.7rem" }}>
                 <label style={{ fontWeight: 500 }}>Actualmente qué tipo de tratamiento está llevando</label><br />
-                <label><input type="radio" name="tratamiento" value="PSICOLÓGICO" checked={form.tratamiento === "PSICOLÓGICO"} onChange={handleChange} style={radioStyle} />Psicológico</label>{" "}
-                <label><input type="radio" name="tratamiento" value="PSIQUIÁTRICO" checked={form.tratamiento === "PSIQUIÁTRICO"} onChange={handleChange} style={radioStyle} />Psiquiátrico</label>{" "}
-                <label><input type="radio" name="tratamiento" value="AMBOS" checked={form.tratamiento === "AMBOS"} onChange={handleChange} style={radioStyle} />Ambos</label>{" "}
-                <label><input type="radio" name="tratamiento" value="NINGUNO" checked={form.tratamiento === "NINGUNO"} onChange={handleChange} style={radioStyle} />Ninguno</label>
+                <label><input type="radio" name="tipo_tratamiento_actual" value="PSICOLÓGICO" checked={form.tipo_tratamiento_actual === "PSICOLÓGICO"} onChange={handleChange} style={radioStyle} />Psicológico</label>{" "}
+                <label><input type="radio" name="tipo_tratamiento_actual" value="PSIQUIÁTRICO" checked={form.tipo_tratamiento_actual === "PSIQUIÁTRICO"} onChange={handleChange} style={radioStyle} />Psiquiátrico</label>{" "}
+                <label><input type="radio" name="tipo_tratamiento_actual" value="AMBOS" checked={form.tipo_tratamiento_actual === "AMBOS"} onChange={handleChange} style={radioStyle} />Ambos</label>{" "}
+                <label><input type="radio" name="tipo_tratamiento_actual" value="NINGUNO" checked={form.tipo_tratamiento_actual === "NINGUNO"} onChange={handleChange} style={radioStyle} />Ninguno</label>
               </div>
               <div style={{ marginBottom: "0.7rem" }}>
                 <label style={{ fontWeight: 500 }}>¿Se sintió cómodo con la atención en UNAYOE? *</label><br />
-                <label><input type="radio" name="comodo" value="SI" checked={form.comodo === "SI"} onChange={handleChange} style={radioStyle} />Sí</label>{" "}
-                <label><input type="radio" name="comodo" value="NO" checked={form.comodo === "NO"} onChange={handleChange} style={radioStyle} />No</label>
+                <label><input type="radio" name="comodidad_unayoe" value="SI" checked={form.comodidad_unayoe === true} onChange={handleChange} style={radioStyle} />Sí</label>{" "}
+                <label><input type="radio" name="comodidad_unayoe" value="NO" checked={form.comodidad_unayoe === false} onChange={handleChange} style={radioStyle} />No</label>
               </div>
-              <textarea name="aprendizaje" required placeholder="¿Qué aprendizaje te llevas de esta atención? *" value={form.aprendizaje} onChange={handleChange} style={{ ...inputStyle, minHeight: "70px" }} />
+              <textarea name="aprendizaje_obtenido" required placeholder="¿Qué aprendizaje te llevas de esta atención? *" value={form.aprendizaje_obtenido} onChange={handleChange} style={{ ...inputStyle, minHeight: "70px" }} />
               <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
                 <button type="button" onClick={handlePrev} style={{
                   background: "#e5e7eb",
