@@ -1,118 +1,163 @@
-import { useState } from "react";
-import { X } from "lucide-react";
+import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { X, Minimize2, Maximize2 } from "lucide-react";
+import { AuthContext } from "../context/AuthContext";
 
 export default function ChatbotWindow({ onClose }) {
   const [mensaje, setMensaje] = useState("");
   const [conversacion, setConversacion] = useState([]);
+  const [minimizado, setMinimizado] = useState(false);
+  const [cargando, setCargando] = useState(false);
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
 
   const enviarMensaje = async () => {
     if (!mensaje.trim()) return;
 
     const nuevoChat = [...conversacion, { tipo: "usuario", texto: mensaje }];
     setConversacion(nuevoChat);
+    setCargando(true);
 
     try {
-      const res = await fetch("http://localhost:5678/webhook/chatbot", {
+      const res = await fetch("http://localhost:8000/chatbot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ texto: mensaje }),
+        body: JSON.stringify({ 
+          texto: mensaje,
+          user_id: user?.id
+        }),
       });
 
+      if (!res.ok) throw new Error("Error en la respuesta");
+
       const data = await res.json();
-
-      // Verifica si el bot sugiere una ruta
-      const texto = data.respuesta || "No se obtuvo respuesta";
-      const ruta = data.ruta || null; // n8n puede devolver algo como { respuesta: "...", ruta: "/student/diario" }
-
-      setConversacion([
-        ...nuevoChat,
-        { tipo: "bot", texto, ruta },
+      setConversacion((prev) => [
+        ...prev,
+        { 
+          tipo: "bot", 
+          texto: data.respuesta || "No entendí tu pregunta", 
+          ruta: data.ruta || null 
+        },
       ]);
     } catch (err) {
-      setConversacion([
-        ...nuevoChat,
-        { tipo: "bot", texto: "Error al conectar con el chatbot 😢" },
+      console.error("Error al enviar mensaje:", err);
+      setConversacion((prev) => [
+        ...prev,
+        { tipo: "bot", texto: "Hubo un error. Intenta nuevamente." },
       ]);
+    } finally {
+      setCargando(false);
     }
 
     setMensaje("");
   };
 
-  // Cuando el usuario hace clic en “Ir a sección”
   const irASeccion = (ruta) => {
     navigate(ruta);
-    onClose(); // opcional: cerrar el chat al navegar
+    onClose();
   };
 
   return (
     <>
-      {/* Fondo semitransparente */}
-      <div
-        className="fixed inset-0 bg-black bg-opacity-30 z-[999]"
-        onClick={onClose}
-      ></div>
+      {/* 🔑 SIN FONDO OSCURO - Solo el chatbot tiene el contenedor */}
 
-      {/* Ventana del chatbot */}
+      {/* 🔑 VENTANA DEL CHATBOT - FLOTANTE ESQUINA INFERIOR DERECHA */}
       <div
-        className="fixed bottom-[90px] right-6 bg-white w-80 rounded-2xl shadow-2xl border border-gray-200 flex flex-col animate-slide-up"
-        style={{ zIndex: 1000 }}
+        className={`chatbot-window-container ${
+          minimizado
+            ? "bottom-6 w-80 h-16 rounded-full" 
+            : "bottom-24 w-96 h-[28rem] animate-slide-up-reverse"
+        }`}
       >
-        {/* Encabezado */}
-        <div className="flex justify-between items-center bg-blue-600 text-white px-4 py-2 rounded-t-2xl">
-          <h3 className="font-semibold">Asistente UNAYOE 🤖</h3>
-          <button onClick={onClose} className="hover:text-gray-300">
-            <X size={20} />
-          </button>
+        {/* 🔑 ENCABEZADO CON COLOR */}
+        <div className="chatbot-header">
+          <h3 className="chatbot-header-title">Asistente UNAYOE 🤖</h3>
+          <div className="chatbot-header-buttons">
+            <button
+              onClick={() => setMinimizado(!minimizado)}
+              className="chatbot-icon-button"
+              title={minimizado ? "Expandir" : "Minimizar"}
+            >
+              {minimizado ? (
+                <Maximize2 size={18} />
+              ) : (
+                <Minimize2 size={18} />
+              )}
+            </button>
+            <button
+              onClick={onClose}
+              className="chatbot-icon-button"
+              title="Cerrar"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
-        {/* Mensajes */}
-        <div
-          className="p-3 flex-1 overflow-y-auto flex flex-col-reverse"
-          style={{ maxHeight: "300px" }}
-        >
-          {conversacion.slice().reverse().map((msg, i) => (
-            <div key={i} className="mb-2">
-              <div
-                className={`p-2 rounded-lg ${
-                  msg.tipo === "usuario"
-                    ? "bg-blue-100 text-right"
-                    : "bg-gray-100 text-left"
-                }`}
-              >
-                {msg.texto}
-              </div>
-
-              {/* Si el bot devuelve una ruta, muestra un botón */}
-              {msg.ruta && (
-                <button
-                  onClick={() => irASeccion(msg.ruta)}
-                  className="mt-1 bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded-full shadow-sm"
-                >
-                  Ir a la sección
-                </button>
+        {/* 🔑 CONTENIDO - Solo visible si NO está minimizado */}
+        {!minimizado && (
+          <>
+            {/* ÁREA DE MENSAJES */}
+            <div className="chatbot-messages-container">
+              {conversacion.length === 0 ? (
+                <div className="chatbot-empty-state">
+                  <div className="text-2xl">👋</div>
+                  <div className="font-medium">¡Hola!</div>
+                  <div className="text-xs">¿Cómo puedo ayudarte?</div>
+                </div>
+              ) : (
+                conversacion.map((msg, i) => (
+                  <div 
+                    key={i} 
+                    className={`chatbot-message ${msg.tipo === "usuario" ? "chatbot-message-user" : "chatbot-message-bot"}`}
+                  >
+                    <div className={`chatbot-bubble ${msg.tipo === "usuario" ? "chatbot-bubble-user" : "chatbot-bubble-bot"}`}>
+                      {msg.texto}
+                    </div>
+                    {msg.ruta && (
+                      <button
+                        onClick={() => irASeccion(msg.ruta)}
+                        className="chatbot-action-button"
+                      >
+                        Ir →
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
+              
+              {/* INDICADOR DE CARGA */}
+              {cargando && (
+                <div className="chatbot-message chatbot-message-bot">
+                  <div className="chatbot-loading">
+                    <div className="chatbot-dot"></div>
+                    <div className="chatbot-dot"></div>
+                    <div className="chatbot-dot"></div>
+                  </div>
+                </div>
               )}
             </div>
-          ))}
-        </div>
 
-        {/* Entrada de mensaje */}
-        <div className="flex border-t border-gray-200 p-2">
-          <input
-            className="flex-1 border rounded-lg p-2 text-sm"
-            placeholder="Escribe tu mensaje..."
-            value={mensaje}
-            onChange={(e) => setMensaje(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && enviarMensaje()}
-          />
-          <button
-            onClick={enviarMensaje}
-            className="ml-2 bg-blue-600 text-white px-3 rounded-lg hover:bg-blue-700"
-          >
-            Enviar
-          </button>
-        </div>
+            {/* INPUT DE MENSAJE */}
+            <div className="chatbot-input-container">
+              <input
+                className="chatbot-input"
+                placeholder="Escribe aquí..."
+                value={mensaje}
+                onChange={(e) => setMensaje(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && !cargando && enviarMensaje()}
+                disabled={cargando}
+              />
+              <button
+                onClick={enviarMensaje}
+                disabled={cargando}
+                className="chatbot-send-button"
+              >
+                {cargando ? "..." : "Enviar"}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </>
   );

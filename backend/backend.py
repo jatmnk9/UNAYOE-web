@@ -770,5 +770,70 @@ async def obtener_recomendaciones_favoritas(user_id: str):
         print(f"Error al obtener recomendaciones favoritas: {e}")
         raise HTTPException(status_code=500, detail=f"Error interno al buscar favoritos: {e}")
     
+@app.post("/chatbot")
+async def chatbot_endpoint(payload: dict):
+    """
+    Recibe mensajes del frontend, los envía a n8n y devuelve la respuesta.
+    """
+    try:
+        texto = payload.get("texto", "")
+        user_id = payload.get("user_id")
+        
+        if not texto:
+            raise HTTPException(status_code=400, detail="No se proporcionó texto")
+        
+        # 🔑 OBTENER CONTEXTO DEL USUARIO
+        context = {}
+
+        if user_id:
+            try:
+                # Obtener últimas notas del usuario
+                notas_response = supabase.table("notas")\
+                    .select("emocion, sentimiento, nota")\
+                    .eq("usuario_id", user_id)\
+                    .order("created_at", desc=True)\
+                    .limit(5).execute()
+                
+                notas = notas_response.data or []
+                
+                if notas:
+                    emociones = [n.get("emocion") for n in notas]
+                    sentimientos = [n.get("sentimiento") for n in notas]
+                    context["emociones"] = emociones
+                    context["sentimientos"] = sentimientos
+                    context["ultima_nota"] = notas[0].get("nota", "")
+                
+                # Obtener datos del usuario
+                usuario_response = supabase.table("usuarios")\
+                    .select("nombre, facultad, escuela")\
+                    .eq("id", user_id)\
+                    .single().execute()
+                
+                if usuario_response.data:
+                    context["nombre"] = usuario_response.data.get("nombre")
+                    context["facultad"] = usuario_response.data.get("facultad")
+                    context["escuela"] = usuario_response.data.get("escuela")
+                    
+            except Exception as e:
+                print(f"Error obteniendo contexto: {e}")
+
+        # Llamar a n8n webhook
+        response = requests.post(
+            "http://localhost:5678/webhook/chatbot",
+            json={
+                "texto": texto,
+                "user_id": user_id,
+                "context": context
+            },
+            timeout=10
+        )
+        response.raise_for_status()
+        data = response.json()
+        
+        return data
+    except Exception as e:
+        print(f"Error en chatbot: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
     # main.py
