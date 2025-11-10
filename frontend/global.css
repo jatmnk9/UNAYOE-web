@@ -1077,6 +1077,7 @@ body, html {
   align-items: flex-end;
   gap: 0.5rem;
   animation: fadeIn 0.3s ease-out;
+  width: 100%;
 }
 
 @keyframes fadeIn {
@@ -1092,22 +1093,24 @@ body, html {
 
 /* Mensaje del USUARIO (Derecha) */
 .chatbot-message-user {
-  justify-content: flex-end;
+  align-items: flex-end;
 }
 
 /* Mensaje del BOT (Izquierda) */
 .chatbot-message-bot {
-  justify-content: flex-start;
+  align-items: flex-start;
 }
 
 /* BURBUJA DE MENSAJE */
 .chatbot-bubble {
-  max-width: 75%;
+  max-width: 80%;
   padding: 0.625rem 0.875rem;
   border-radius: 1rem;
   font-size: 0.875rem;
   line-height: 1.4;
   word-wrap: break-word;
+  display: inline-block;
+  text-align: left;
 }
 
 /* Burbuja del USUARIO */
@@ -1115,6 +1118,7 @@ body, html {
   background-color: #2563eb;
   color: white;
   border-bottom-right-radius: 0.25rem;
+  margin-left: auto;
 }
 
 /* Burbuja del BOT */
@@ -1122,6 +1126,7 @@ body, html {
   background-color: #e5e7eb;
   color: #1f2937;
   border-bottom-left-radius: 0.25rem;
+  margin-right: auto;
 }
 
 /* INDICADOR DE CARGA */
