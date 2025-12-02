@@ -63,7 +63,18 @@ export default function App() {
           <Login />
         )} 
       />
-      <Route path="/signup" element={<Signup />} />
+      <Route
+        path="/signup"
+        element={
+          user ? (
+            user.rol === "estudiante" ? <Navigate to="/student" /> :
+            user.rol === "psicologo" ? <Navigate to="/psychologist" /> :
+            <Navigate to="/" />
+          ) : (
+            <Signup />
+          )
+        }
+      />
 
       {/* =======================================
           PORTAL DEL ESTUDIANTE (Rutas anidadas)

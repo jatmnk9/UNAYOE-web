@@ -1,4 +1,5 @@
 """
+<<<<<<< HEAD
 Módulo de routers de la API.
 """
 from app.routers import (
@@ -16,3 +17,7 @@ __all__ = [
     "analysis",
     "recommendations"
 ]
+=======
+Módulo de routers/controladores.
+"""
+>>>>>>> main

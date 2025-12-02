@@ -1,4 +1,5 @@
 """
+<<<<<<< HEAD
 Módulo de servicios de negocio.
 """
 from app.services.nlp_service import NLPService
@@ -16,3 +17,7 @@ __all__ = [
     "RecommendationsService",
     "UsersService"
 ]
+=======
+Módulo de servicios (lógica de negocio).
+"""
+>>>>>>> main

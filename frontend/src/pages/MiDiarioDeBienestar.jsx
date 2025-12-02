@@ -5,9 +5,15 @@ export default function MiDiarioDeBienestar() {
   const { user } = useAuth();
   const [note, setNote] = useState("");
   const [notes, setNotes] = useState([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const ITEMS_PER_PAGE = 3;
   const [loading, setLoading] = useState(false);
   const [notesLoading, setNotesLoading] = useState(false);
+  const [accompanimentText, setAccompanimentText] = useState(null);
+  const [showAccompaniment, setShowAccompaniment] = useState(false);
+  
 
+  // --- Lógica de Backend (REAL) ---
   const fetchNotes = async (userId) => {
     if (!userId) {
       setNotes([]);
@@ -16,9 +22,13 @@ export default function MiDiarioDeBienestar() {
     }
     try {
       setNotesLoading(true);
+      // Asegúrate de que esta URL sea accesible desde tu entorno de desarrollo
       const res = await fetch(`http://127.0.0.1:8000/notas/${userId}`);
-      const result = await res.json();
-      setNotes(result.data || []);
+      if (!res.ok) throw new Error(`Error al obtener notas: ${res.status}`);
+  const result = await res.json();
+  // Reiniciar la página a la primera cuando se cargan notas
+  setNotes(result.data || []);
+  setCurrentPage(0);
     } catch (err) {
       console.error("Error cargando notas:", err);
     } finally {
@@ -34,7 +44,7 @@ export default function MiDiarioDeBienestar() {
 
   const handleAddNote = async () => {
     if (!note.trim() || !user) {
-      if (!user) alert("Debes iniciar sesión para guardar notas");
+      // Se elimina el alert para una mejor experiencia de usuario. El botón ya está deshabilitado.
       return;
     }
     setLoading(true);
@@ -45,6 +55,7 @@ export default function MiDiarioDeBienestar() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           note,
+          // Se envía el título generado por la IA (o uno por defecto)
           user_id: user.id,
         }),
       });
@@ -60,171 +71,336 @@ export default function MiDiarioDeBienestar() {
         const newNote = result.data[0];
         setNotes((prev) => [newNote, ...prev]);
       } else {
+        // Si la respuesta no devuelve la nota, la volvemos a cargar
         fetchNotes(user.id);
       }
 
       setNote("");
+
+      // Mostrar acompañamiento si viene desde el backend
+      if (result.accompaniment) {
+        setAccompanimentText(result.accompaniment);
+        setShowAccompaniment(true);
+      }
     } catch (err) {
       console.error("Error enviando o procesando la nota:", err);
-      alert(`Error enviando la nota ❌. Detalle: ${err.message}`);
+      // Considera mostrar un mensaje de error no invasivo aquí
     } finally {
       setLoading(false);
     }
   };
+  
+  // --- Simulación de IA Generativa para Títulos (se mantiene como simulación) ---
+  // MiDiarioDeBienestar.jsx
 
+// ... (tus imports y estados iniciales)
+
+  // --- Lógica de Backend (REAL) ---
+  // ... (tus otras funciones como fetchNotes y handleAddNote)
+
+
+// ... (el resto de tu componente, incluido el return)
+
+  const getSentimentColor = (sentiment) => {
+    if (sentiment === "NEG") return "#d72660";
+    if (sentiment === "POS") return "#2563eb";
+    return "#6b7280";
+  };
+
+  // Convierte la respuesta del backend (que puede ser string u objeto) a texto seguro para renderizar
+  const formatAccompaniment = (accomp) => {
+    if (!accomp && accomp !== 0) return '';
+    if (typeof accomp === 'string') return accomp;
+    // Si es un array, intentar unir elementos (si son strings u objetos con 'text'/'content')
+    if (Array.isArray(accomp)) {
+      return accomp.map((it) => formatAccompaniment(it)).filter(Boolean).join('\n\n');
+    }
+    // Si es objeto, intentar extraer campos comunes
+    if (typeof accomp === 'object') {
+      // 1) parts (generateContent): { parts: [{ text: '...' }, ...] }
+      if (accomp.parts && Array.isArray(accomp.parts)) {
+        return accomp.parts.map(p => (typeof p === 'string' ? p : p.text || JSON.stringify(p))).join('\n');
+      }
+      // 2) candidates / outputs
+      if (accomp.candidates && Array.isArray(accomp.candidates) && accomp.candidates.length > 0) {
+        const first = accomp.candidates[0];
+        if (first.parts) return formatAccompaniment(first.parts);
+        return first.content || first.output || first.text || JSON.stringify(first);
+      }
+      if (accomp.outputs && Array.isArray(accomp.outputs) && accomp.outputs.length > 0) {
+        const first = accomp.outputs[0];
+        if (first.parts) return formatAccompaniment(first.parts);
+        return first.content || first.output || first.text || JSON.stringify(first);
+      }
+
+      // 3) buscar claves comunes
+      for (const k of ['content', 'output', 'text']) {
+        if (k in accomp && typeof accomp[k] === 'string') return accomp[k];
+      }
+
+      // 4) fallback: stringify (con límite)
+      try {
+        const s = JSON.stringify(accomp, null, 2);
+        return s.length > 1000 ? s.slice(0, 1000) + '...' : s;
+      } catch (e) {
+        return String(accomp);
+      }
+    }
+
+    return String(accomp);
+  };
+  
   return (
-    <div className="portal-main-content">
-      <div
-        className="login-card"
-        style={{
-          maxWidth: "700px",
-          margin: "2rem auto",
-          padding: "2.5rem 2rem",
-          borderRadius: "1.2rem",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-          background: "var(--color-soft-bg)",
-        }}
-      >
-        <h1
-          style={{
-            fontSize: "2.2rem",
-            fontWeight: 700,
-            color: "var(--color-primary)",
-            marginBottom: "0.5rem",
-            textAlign: "center",
-            borderBottom: "2px solid var(--color-soft-bg)",
-            paddingBottom: "0.7rem"
-          }}
-        >
-          Mi Diario de Bienestar 🧘‍♀️
-        </h1>
-        <p style={{
-          color: "var(--color-dark)",
-          fontSize: "1.05rem",
-          marginBottom: "1.5rem",
-          textAlign: "center",
-          fontWeight: 500
-        }}>
-          Escribe cómo te sientes hoy. Analizaremos tu nota para ayudarte a monitorear tu bienestar.
-        </p>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,400&family=Karla:wght@400;500;700&display=swap');
+        
+        .book-background {
+          padding: 3rem 1rem;
+          background: #e0dcd1; /* Color de fondo para simular una mesa */
+        }
 
-        <textarea
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="Escribe tu nota aquí..."
-          disabled={loading || notesLoading}
-          style={{
-            width: "100%",
-            height: "90px",
-            padding: "1rem",
-            border: "1.5px solid var(--color-primary)",
-            borderRadius: "0.7rem",
-            marginBottom: "1rem",
-            fontSize: "1rem",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
-            outline: "none",
-            background: "#fff",
-            resize: "vertical",
-            transition: "border 0.2s, box-shadow 0.2s"
-          }}
-          onFocus={e => (e.target.style.borderColor = "var(--color-dark)")}
-          onBlur={e => (e.target.style.borderColor = "var(--color-primary)")}
-        />
+        .book-container {
+          max-width: 1200px;
+          min-height: 80vh;
+          margin: auto;
+          display: flex;
+          background: #fdfaf5;
+          border-radius: 6px;
+          box-shadow: 0 15px 40px rgba(0,0,0,0.2), 
+                      inset 0 0 10px rgba(0,0,0,0.1);
+          position: relative;
+        }
 
-        <button
-          onClick={handleAddNote}
-          disabled={loading || !note.trim()}
-          style={{
-            width: "100%",
-            padding: "0.85rem 0",
-            background: "var(--color-primary)",
-            color: "#fff",
-            fontWeight: 600,
-            fontSize: "1.05rem",
-            borderRadius: "0.7rem",
-            border: "none",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.10)",
-            cursor: loading ? "not-allowed" : "pointer",
-            transition: "background 0.2s, box-shadow 0.2s",
-            marginBottom: "1.5rem",
-            opacity: loading ? 0.7 : 1
-          }}
-          onMouseOver={e => !loading && (e.target.style.background = "var(--color-dark)")}
-          onMouseOut={e => !loading && (e.target.style.background = "var(--color-primary)")}
-        >
-          {loading ? "Analizando..." : "Guardar y Analizar"}
-        </button>
+        .book-container::before { /* Simulación del lomo del libro */
+          content: '';
+          position: absolute;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 20px;
+          top: 10px;
+          bottom: 10px;
+          background-image: linear-gradient(to right, rgba(0,0,0,0.15), rgba(0,0,0,0.05) 30%, rgba(255,255,255,0.05) 70%, rgba(255,255,255,0.15));
+          box-shadow: inset 2px 0 5px rgba(0,0,0,0.1), inset -2px 0 5px rgba(0,0,0,0.1);
+        }
 
-        <div style={{ marginTop: "2rem" }}>
-          <h2 style={{
-            fontWeight: 600,
-            fontSize: "1.3rem",
-            color: "var(--color-dark)",
-            borderBottom: "1px solid #eee",
-            paddingBottom: "0.5rem",
-            marginBottom: "1.2rem"
-          }}>
-            Historial de Notas
-          </h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem", maxHeight: "350px", overflowY: "auto", paddingRight: "0.5rem" }}>
-            {notesLoading && <p style={{ color: "var(--color-text-gray)" }}>Cargando notas...</p>}
-            {notes.length === 0 && !notesLoading && (
-              <p style={{ color: "var(--color-text-gray)" }}>Aún no tienes notas guardadas. ¡Comienza a escribir!</p>
-            )}
-            {notes.map((n) => {
-              let sentimientoColor = "var(--color-primary)";
-              if (n.sentimiento === "NEG") sentimientoColor = "#d72660";
-              else if (n.sentimiento === "POS") sentimientoColor = "#2563eb";
-              return (
-                <div key={n.id} style={{
-                  background: "#fff",
-                  padding: "1rem",
-                  borderRadius: "0.7rem",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
-                  border: "1px solid #eee"
-                }}>
-                  <p style={{
-                    fontWeight: 500,
-                    color: "var(--color-dark)",
-                    marginBottom: "0.5rem"
-                  }}>
-                    {n.nota}
-                  </p>
-                  <div style={{ fontSize: "0.95rem", display: "flex", gap: "1rem" }}>
-                    <span style={{
-                      display: "inline-block",
-                      padding: "0.3rem 0.8rem",
-                      background: "var(--color-soft-bg)",
-                      color: sentimientoColor,
-                      borderRadius: "1rem",
-                      fontWeight: 600
-                    }}>
-                      Sentimiento: {n.sentimiento}
-                    </span>
-                    <span style={{
-                      display: "inline-block",
-                      padding: "0.3rem 0.8rem",
-                      background: "#e4f3ffff",
-                      color: "#3526d7ff",
-                      borderRadius: "1rem",
-                      fontWeight: 600
-                    }}>
-                      Emoción: {n.emocion} ({(n.emocion_score * 100).toFixed(1)}%)
-                    </span>
+        .page {
+          width: 50%;
+          padding: 2.5rem 3rem;
+          font-family: 'Karla', sans-serif;
+          color: #333;
+          display: flex;
+          flex-direction: column;
+        }
+        
+        .left-page {
+          border-right: 1px dashed #c9c4b8;
+        }
+
+        .right-page {
+          border-left: 1px dashed #c9c4b8;
+        }
+
+        .diary-header h1 {
+          font-family: 'Merriweather', serif;
+          font-size: 2.2rem;
+          color: #2c3e50;
+        }
+
+        .diary-header p {
+          font-family: 'Merriweather', serif; font-style: italic;
+          color: #555; font-size: 1rem; margin-bottom: 1.5rem;
+        }
+        
+        .diary-textarea {
+          width: 100%; flex-grow: 1; min-height: 200px;
+          border: 1.5px solid #d1c7b8; background-color: transparent;
+          /* Estilo de líneas de cuaderno */
+          background-image: linear-gradient(#e0dcd1 1px, transparent 1px);
+          background-size: 100% 1.8em;
+          line-height: 1.8em;
+          padding: 0.5rem 1rem;
+        }
+        
+        .diary-textarea:focus { outline: none; border-color: #a08c72; }
+        
+
+        .actions-toolbar { display: flex; gap: 1rem; margin-top: 1rem; }
+        
+        .ai-button, .diary-button {
+          padding: 0.7rem 1.2rem; border-radius: 8px; border: none;
+          font-weight: 700; font-size: 0.9rem; cursor: pointer;
+          transition: all 0.3s;
+        }
+        
+        .ai-button { background-color: #e8eaf6; color: #3f51b5; }
+        .ai-button:hover:not(:disabled) { background-color: #c5cae9; }
+        
+        .diary-button { background-color: #34495e; color: white; flex-grow: 1; }
+        .diary-button:hover:not(:disabled) { background-color: #2c3e50; }
+        .diary-button:disabled { background-color: #95a5a6; cursor: not-allowed; }
+
+        .notes-section h2 {
+          font-family: 'Merriweather', serif; font-size: 1.8rem;
+          color: #2c3e50; margin-bottom: 1.5rem;
+        }
+        
+        .notes-list { flex-grow: 1; overflow-y: auto; padding-right: 1rem; }
+        
+        .note-card {
+          background: rgba(255,255,255,0.5); padding: 1.2rem; border-radius: 4px;
+          border: 1px solid #e8e2d7; margin-bottom: 1.2rem;
+        }
+        .note-card h3 { font-family: 'Merriweather', serif; margin: 0 0 0.5rem 0; color: #34495e; }
+        .note-card p:first-of-type { margin: 0; line-height: 1.6; }
+        .note-tags { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.7rem; }
+        .note-tag { padding: 0.3rem 0.8rem; border-radius: 1rem; font-size: 0.8rem; font-weight: 500;}
+        .note-date { margin-top: 1rem; font-size: 0.8rem; color: #777; text-align: right; }
+      `}</style>
+      
+      <div className="book-background">
+        <div className="book-container">
+          {/* --- PÁGINA IZQUIERDA: ESCRITURA --- */}
+          <div className="page left-page">
+            <div className="diary-header">
+              <h1>Mi Diario de Bienestar 🧘‍♀️</h1>
+              <p>Un espacio para ti. Escribe cómo te sientes, reflexiona y observa tu camino.</p>
+            </div>
+            
+            <textarea
+              className="diary-textarea"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Querido diario..."
+              disabled={loading || notesLoading}
+            />
+            <div className="actions-toolbar">
+               
+              <button
+                className="diary-button"
+                onClick={handleAddNote}
+                disabled={loading || !note.trim()}
+              >
+                {loading ? "Guardando..." : "Guardar Página"}
+              </button>
+            </div>
+          </div>
+
+          {/* --- PÁGINA DERECHA: HISTORIAL --- */}
+          <div className="page right-page">
+            <div className="notes-section">
+              <h2>Notas</h2>
+              <div className="notes-list">
+                {notesLoading && <p>Buscando en el pasado...</p>}
+                {notes.length === 0 && !notesLoading && <p>Tu diario espera la primera historia.</p>}
+                {(() => {
+                  // Calcular notas visibles según la página actual
+                  const start = currentPage * ITEMS_PER_PAGE;
+                  const visibleNotes = notes.slice(start, start + ITEMS_PER_PAGE);
+                  return visibleNotes.map((n) => (
+                  <div key={n.id} className="note-card">
+                    <p>{n.nota}</p>
+                    <div className="note-tags">
+                      <span className="note-tag" style={{ color: getSentimentColor(n.sentimiento), background: 'rgba(107, 114, 128, 0.1)' }}>
+                        Sentimiento: {n.sentimiento}
+                      </span>
+                       <span className="note-tag" style={{color: '#3526d7', background: 'rgba(53, 38, 215, 0.1)'}}>
+                         Emoción: {n.emocion} ({(n.emocion_score * 100).toFixed(0)}%)
+                      </span>
+                    </div>
+                    <p className="note-date">
+                      {new Date(n.created_at).toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' })}
+                    </p>
                   </div>
-                  <p style={{
-                    fontSize: "0.92rem",
-                    color: "var(--color-text-gray)",
-                    marginTop: "0.5rem"
-                  }}>
-                    {new Date(n.created_at).toLocaleString()}
-                  </p>
+                  ));
+                })()}
+              </div>
+              {/* Controles de paginación */}
+              {notes.length > ITEMS_PER_PAGE && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.8rem' }}>
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                    disabled={currentPage === 0}
+                    aria-label="Anterior"
+                    style={{ padding: '0.4rem 0.7rem', borderRadius: 6, border: 'none', background: '#f0f0f0', cursor: currentPage === 0 ? 'not-allowed' : 'pointer' }}
+                  >
+                    ← Anterior
+                  </button>
+
+                  <div style={{ fontSize: 14, color: '#555' }}>{`${currentPage + 1} / ${Math.ceil(notes.length / ITEMS_PER_PAGE)}`}</div>
+
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(Math.ceil(notes.length / ITEMS_PER_PAGE) - 1, p + 1))}
+                    disabled={currentPage >= Math.ceil(notes.length / ITEMS_PER_PAGE) - 1}
+                    aria-label="Siguiente"
+                    style={{ padding: '0.4rem 0.7rem', borderRadius: 6, border: 'none', background: '#34495e', color: 'white', cursor: currentPage >= Math.ceil(notes.length / ITEMS_PER_PAGE) - 1 ? 'not-allowed' : 'pointer' }}
+                  >
+                    Siguiente →
+                  </button>
                 </div>
-              );
-            })}
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+            </div>
+
+            {/* Modal de acompañamiento AI */}
+            {showAccompaniment && accompanimentText && (
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Acompañamiento"
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'rgba(0,0,0,0.45)',
+                  zIndex: 60
+                }}
+                onClick={() => setShowAccompaniment(false)}
+              >
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    width: 'min(720px, 92%)',
+                    background: 'white',
+                    borderRadius: 10,
+                    padding: '1.25rem 1.5rem',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+                    position: 'relative'
+                  }}
+                >
+                  <button
+                    aria-label="Cerrar acompañamiento"
+                    onClick={() => setShowAccompaniment(false)}
+                    style={{
+                      position: 'absolute',
+                      right: 10,
+                      top: 8,
+                      border: 'none',
+                      background: 'transparent',
+                      fontSize: 20,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ×
+                  </button>
+                  <h3 style={{ marginTop: 0, fontFamily: 'Merriweather, serif' }}>Un mensaje para ti</h3>
+                  <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{formatAccompaniment(accompanimentText)}</p>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
+                    <button
+                      onClick={() => setShowAccompaniment(false)}
+                      style={{ padding: '0.5rem 0.9rem', borderRadius: 8, border: 'none', background: '#34495e', color: 'white' }}
+                    >
+                      Cerrar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+    </>
   );
 }
+

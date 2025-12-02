@@ -1,6 +1,6 @@
 """
-Servicio de procesamiento de lenguaje natural (NLP).
-Gestiona la carga de modelos y el análisis de texto.
+Servicio de Procesamiento de Lenguaje Natural (NLP).
+Implementa patrón Singleton para cargar modelos una sola vez.
 """
 import re
 import nltk
@@ -8,59 +8,67 @@ from typing import Tuple, List
 from transformers import pipeline
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
-
-from app.config.settings import settings
+from functools import lru_cache
+from app.config.settings import get_settings
 
 
 class NLPService:
-    """Servicio de procesamiento de lenguaje natural."""
+    """
+    Servicio de NLP con patrón Singleton.
+    Carga los modelos de análisis de sentimiento y emoción una sola vez.
+    """
+    _instance = None
+    _initialized = False
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(NLPService, cls).__new__(cls)
+        return cls._instance
 
     def __init__(self):
-        """Inicializa el servicio de NLP y carga los modelos."""
-        self._download_nltk_resources()
-        self.sentiment_classifier = self._load_sentiment_model()
-        self.emotion_classifier = self._load_emotion_model()
+        """Inicializa los modelos de NLP solo una vez."""
+        if not NLPService._initialized:
+            self._initialize_nltk_resources()
+            self._initialize_models()
+            NLPService._initialized = True
 
-    def _download_nltk_resources(self) -> None:
+    def _initialize_nltk_resources(self) -> None:
         """Descarga recursos necesarios de NLTK."""
         try:
             nltk.data.find('corpora/stopwords')
         except LookupError:
-            print("Descargando stopwords...")
-            nltk.download('stopwords')
+            print("Descargando stopwords de NLTK...")
+            nltk.download('stopwords', quiet=True)
 
         try:
             nltk.data.find('tokenizers/punkt')
         except LookupError:
-            print("Descargando punkt...")
-            nltk.download('punkt')
+            print("Descargando punkt de NLTK...")
+            nltk.download('punkt', quiet=True)
 
-    def _load_sentiment_model(self):
-        """Carga el modelo de análisis de sentimientos."""
+    def _initialize_models(self) -> None:
+        """Inicializa los modelos de transformers."""
+        settings = get_settings()
+
         try:
-            print(f"Cargando modelo de sentimientos: {settings.sentiment_model}")
-            return pipeline(
+            print("Cargando modelos de PNL optimizados para español...")
+            self.sentiment_classifier = pipeline(
                 "sentiment-analysis",
                 model=settings.sentiment_model
             )
-        except Exception as e:
-            print(f"Error al cargar modelo de sentimientos: {e}. Usando fallback.")
-            return pipeline(
-                "sentiment-analysis",
-                model=settings.fallback_model
-            )
-
-    def _load_emotion_model(self):
-        """Carga el modelo de análisis de emociones."""
-        try:
-            print(f"Cargando modelo de emociones: {settings.emotion_model}")
-            return pipeline(
+            self.emotion_classifier = pipeline(
                 "sentiment-analysis",
                 model=settings.emotion_model
             )
+            print("✅ Modelos de NLP cargados exitosamente")
         except Exception as e:
-            print(f"Error al cargar modelo de emociones: {e}. Usando fallback.")
-            return pipeline(
+            print(f"⚠️ Error al cargar modelos específicos: {e}")
+            print(f"Usando modelo alternativo: {settings.fallback_model}")
+            self.sentiment_classifier = pipeline(
+                "sentiment-analysis",
+                model=settings.fallback_model
+            )
+            self.emotion_classifier = pipeline(
                 "sentiment-analysis",
                 model=settings.fallback_model
             )
@@ -70,16 +78,23 @@ class NLPService:
         Limpia y tokeniza el texto.
 
         Args:
-            texto: Texto a procesar.
+            texto: Texto a procesar
 
         Returns:
-            Tupla con (texto_procesado, tokens_limpios).
+            Tupla de (texto_procesado, lista_de_tokens)
         """
+        if not texto:
+            return "", []
+
         texto = texto.lower()
         texto = re.sub(r'http\S+|www\S+|https\S+', '', texto, flags=re.MULTILINE)
         texto = re.sub(r'[^\w\s]', '', texto)
 
-        tokens = word_tokenize(texto, language='spanish')
+        try:
+            tokens = word_tokenize(texto, language='spanish')
+        except Exception:
+            tokens = texto.split()
+
         stop_words = set(stopwords.words('spanish'))
         tokens_limpios = [
             token for token in tokens
@@ -93,27 +108,48 @@ class NLPService:
         Analiza el sentimiento de un texto.
 
         Args:
-            texto: Texto a analizar.
+            texto: Texto a analizar
 
         Returns:
-            Etiqueta del sentimiento detectado.
+            Label del sentimiento (POS/NEG/NEU)
         """
-        resultado = self.sentiment_classifier(texto)[0]
-        return resultado['label']
+        if not texto:
+            return "NEU"
+
+        try:
+            result = self.sentiment_classifier(texto)[0]
+            return result['label']
+        except Exception as e:
+            print(f"Error en análisis de sentimiento: {e}")
+            return "ERROR"
 
     def analizar_emocion(self, texto: str) -> Tuple[str, float]:
         """
         Analiza la emoción de un texto.
 
         Args:
-            texto: Texto a analizar.
+            texto: Texto a analizar
 
         Returns:
-            Tupla con (emoción, score).
+            Tupla de (label_emocion, score_confianza)
         """
-        resultado = self.emotion_classifier(texto)[0]
-        return resultado['label'], resultado['score']
+        if not texto:
+            return "neutro", 0.0
+
+        try:
+            result = self.emotion_classifier(texto)[0]
+            return result['label'], result['score']
+        except Exception as e:
+            print(f"Error en análisis de emoción: {e}")
+            return "ERROR", 0.0
 
 
-# Instancia única del servicio (singleton)
-nlp_service = NLPService()
+@lru_cache()
+def get_nlp_service() -> NLPService:
+    """
+    Retorna una instancia única de NLPService (Singleton).
+
+    Returns:
+        NLPService: Instancia del servicio de NLP
+    """
+    return NLPService()

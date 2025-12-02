@@ -1,161 +1,187 @@
 """
-Servicio de gestión de usuarios.
-Gestiona la creación y consulta de estudiantes y psicólogos.
+Servicio de gestión de usuarios (estudiantes y psicólogos).
 """
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from fastapi import HTTPException
-
 from app.db.supabase import get_supabase_client
-from app.models.schemas import Estudiante, EstudianteCreate, PsicologoCreate
-
+from app.models.schemas import EstudianteCreate, PsicologoCreate
 
 
 class UsersService:
     """Servicio de gestión de usuarios."""
 
     def __init__(self):
-        """Inicializa el servicio de usuarios."""
         self.supabase = get_supabase_client()
 
-    async def crear_estudiante(self, estudiante: EstudianteCreate) -> Dict[str, Any]:
+    def crear_estudiante(self, estudiante: EstudianteCreate) -> Dict[str, Any]:
         """
-        Crea un nuevo estudiante en Auth y en la tabla usuarios.
+        Crea un nuevo estudiante en el sistema.
 
         Args:
-            estudiante: Datos del estudiante.
+            estudiante: Datos del estudiante a crear
 
         Returns:
-            Diccionario con el estudiante creado.
+            Dict con mensaje y datos del estudiante creado
 
         Raises:
-            HTTPException: Si ocurre un error al crear el estudiante.
+            HTTPException: Si ocurre un error durante la creación
         """
         try:
-            # Paso 1: Crear usuario en Supabase Auth
             auth_response = self.supabase.auth.sign_up({
                 "email": estudiante.correo_institucional,
-                "password": estudiante.dni, 
-                "options": {
-                    "data": {
-                        "nombre": estudiante.nombre,
-                        "apellido": estudiante.apellido,
-                        "rol": "estudiante"
-                    }
-                }
+                "password": estudiante.dni
             })
 
             if not auth_response.user:
                 raise HTTPException(
-                    status_code=500,
-                    detail="Error al crear usuario en el sistema de autenticación"
+                    status_code=400,
+                    detail="No se pudo crear el usuario en el sistema de autenticación"
                 )
 
-            # Paso 2: Obtener el ID del usuario creado
             user_id = auth_response.user.id
 
-            # Paso 3: Crear perfil en la tabla usuarios
-            data = estudiante.model_dump()
-            data["id"] = user_id
-            data["rol"] = "estudiante"
+            estudiante_data = estudiante.model_dump()
+            estudiante_data["id"] = user_id
+            estudiante_data["rol"] = "estudiante"
 
             response = self.supabase.table("usuarios")\
-                .insert(data)\
+                .insert(estudiante_data)\
                 .execute()
 
             return {
                 "message": "Estudiante creado con éxito",
-                "data": response.data[0] if response.data else None,
-                "user_id": user_id
+                "data": response.data
             }
 
         except HTTPException:
             raise
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error al crear estudiante: {str(e)}"
+            )
 
-    async def crear_psicologo(self, psicologo: PsicologoCreate) -> Dict[str, Any]:
+    def crear_psicologo(self, psicologo: PsicologoCreate) -> Dict[str, Any]:
         """
-        Crea un nuevo psicólogo en Auth y en la tabla usuarios.
+        Crea un nuevo psicólogo en el sistema.
 
         Args:
-            psicologo: Datos del psicólogo.
+            psicologo: Datos del psicólogo a crear
 
         Returns:
-            Diccionario con el psicólogo creado.
+            Dict con mensaje y datos del psicólogo creado
 
         Raises:
-            HTTPException: Si ocurre un error al crear el psicólogo.
+            HTTPException: Si ocurre un error durante la creación
         """
         try:
-            # Paso 1: Crear usuario en Supabase Auth
             auth_response = self.supabase.auth.sign_up({
                 "email": psicologo.correo_institucional,
-                "password": psicologo.dni,
-                "options": {
-                    "data": {
-                        "nombre": psicologo.nombre,
-                        "apellido": psicologo.apellido,
-                        "rol": "psicologo"
-                    }
-                }
+                "password": psicologo.dni
             })
 
             if not auth_response.user:
                 raise HTTPException(
-                    status_code=500,
-                    detail="Error al crear usuario en el sistema de autenticación"
+                    status_code=400,
+                    detail="No se pudo crear el usuario en el sistema de autenticación"
                 )
 
-            # Paso 2: Obtener el ID del usuario creado
             user_id = auth_response.user.id
 
-            # Paso 3: Crear perfil en la tabla usuarios
-            data = psicologo.model_dump()
-            data["id"] = user_id
-            data["rol"] = "psicologo"
+            psicologo_data = psicologo.model_dump()
+            psicologo_data["id"] = user_id
+            psicologo_data["rol"] = "psicologo"
 
             response = self.supabase.table("usuarios")\
-                .insert(data)\
+                .insert(psicologo_data)\
                 .execute()
 
             return {
                 "message": "Psicólogo creado con éxito",
-                "data": response.data[0] if response.data else None,
-                "user_id": user_id
+                "data": response.data
             }
 
         except HTTPException:
             raise
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error al crear psicólogo: {str(e)}"
+            )
 
-    async def obtener_estudiantes(self) -> List[Dict[str, Any]]:
+    def obtener_estudiantes(
+        self,
+        psychologist_id: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
-        Obtiene la lista de todos los estudiantes.
+        Obtiene la lista de estudiantes.
+
+        Args:
+            psychologist_id: ID del psicólogo (opcional, para filtrar)
 
         Returns:
-            Lista de estudiantes.
+            Dict con mensaje y lista de estudiantes
 
         Raises:
-            HTTPException: Si ocurre un error al obtener los estudiantes.
+            HTTPException: Si ocurre un error durante la consulta
         """
         try:
-            response = self.supabase.table("usuarios")\
+            query = self.supabase.table("usuarios")\
                 .select("id, nombre, apellido, codigo_alumno")\
-                .eq("rol", "estudiante")\
-                .execute()
+                .eq("rol", "estudiante")
+
+            if psychologist_id:
+                query = query.eq("psicologo_id", psychologist_id)
+
+            response = query.execute()
 
             if not response.data:
-                return []
+                return {
+                    "message": "No se encontraron estudiantes",
+                    "data": []
+                }
 
-            return response.data
+            return {
+                "message": "Estudiantes recuperados con éxito",
+                "data": response.data
+            }
 
         except Exception as e:
             raise HTTPException(
                 status_code=500,
-                detail=f"Error interno al buscar estudiantes: {e}"
+                detail=f"Error al buscar estudiantes: {str(e)}"
+            )
+
+    def obtener_psicologos_disponibles(self) -> List[Dict[str, Any]]:
+        """
+        Obtiene la lista de psicólogos disponibles.
+
+        Returns:
+            Lista de psicólogos
+
+        Raises:
+            HTTPException: Si ocurre un error durante la consulta
+        """
+        try:
+            response = self.supabase.table("usuarios")\
+                .select("id, nombre, apellido, especialidad")\
+                .eq("rol", "psicologo")\
+                .execute()
+
+            return response.data or []
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error al obtener psicólogos: {str(e)}"
             )
 
 
-# Instancia única del servicio
-users_service = UsersService()
+def get_users_service() -> UsersService:
+    """
+    Factory function para obtener instancia de UsersService.
+
+    Returns:
+        UsersService: Instancia del servicio de usuarios
+    """
+    return UsersService()

@@ -1,61 +1,50 @@
 """
 Router de usuarios.
-Gestiona las rutas relacionadas con estudiantes y psicólogos.
+Maneja endpoints de creación y consulta de estudiantes y psicólogos.
 """
-from fastapi import APIRouter
+from typing import Optional
+from fastapi import APIRouter, Depends, Query
+from app.models.schemas import EstudianteCreate, PsicologoCreate, MessageResponse
+from app.services.users_service import get_users_service, UsersService
+from app.services.alert_service import get_alert_service, AlertService
+
+router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
 
+@router.post("/estudiantes", response_model=MessageResponse)
+async def crear_estudiante(
+    estudiante: EstudianteCreate,
+    users_service: UsersService = Depends(get_users_service)
+):
+    """Crea un nuevo estudiante en el sistema."""
+    return users_service.crear_estudiante(estudiante)
 
 
-
-
-from app.models.schemas import EstudianteCreate, PsicologoCreate
-from app.services.users_service import users_service
-
-router = APIRouter(
-    prefix="/usuarios",
-    tags=["Usuarios"]
-)
-
-
-@router.post("/estudiantes")
-async def crear_estudiante(estudiante: EstudianteCreate):
-    """
-    Crea un nuevo estudiante en el sistema.
-
-    Args:
-        estudiante: Datos del estudiante a crear.
-
-    Returns:
-        Diccionario con el mensaje de éxito y los datos del estudiante.
-    """
-    return await users_service.crear_estudiante(estudiante)
-
-
-@router.post("/psicologos")
-async def crear_psicologo(psicologo: PsicologoCreate):
-    """
-    Crea un nuevo psicólogo en el sistema.
-
-    Args:
-        psicologo: Datos del psicólogo a crear.
-
-    Returns:
-        Diccionario con el mensaje de éxito y los datos del psicólogo.
-    """
-    return await users_service.crear_psicologo(psicologo)
+@router.post("/psicologos", response_model=MessageResponse)
+async def crear_psicologo(
+    psicologo: PsicologoCreate,
+    users_service: UsersService = Depends(get_users_service)
+):
+    """Crea un nuevo psicólogo en el sistema."""
+    return users_service.crear_psicologo(psicologo)
 
 
 @router.get("/psychologist/students")
-async def obtener_estudiantes():
-    """
-    Obtiene la lista de todos los estudiantes.
+async def get_students(
+    psychologist_id: Optional[str] = None,
+    users_service: UsersService = Depends(get_users_service)
+):
+    """Obtiene lista de estudiantes, opcionalmente filtrada por psicólogo."""
+    return users_service.obtener_estudiantes(psychologist_id)
 
-    Returns:
-        Diccionario con la lista de estudiantes.
+
+@router.get("/psychologist/students-alerts")
+async def get_students_with_alerts(
+    limit_notes: int = Query(5, description="Número de notas recientes a analizar"),
+    psychologist_id: Optional[str] = None,
+    alert_service: AlertService = Depends(get_alert_service)
+):
     """
-    estudiantes = await users_service.obtener_estudiantes()
-    return {
-        "message": "Estudiantes recuperados con éxito" if estudiantes else "No se encontraron estudiantes",
-        "data": estudiantes
-    }
+    Obtiene estudiantes con alertas de riesgo de tristeza/depresión.
+    """
+    return alert_service.get_students_with_alerts(limit_notes, psychologist_id)

@@ -1,39 +1,35 @@
 """
 Servicio de autenticación.
-Gestiona el inicio de sesión y verificación de usuarios.
+Maneja login y validación de usuarios.
 """
-from typing import Dict, Any
 from fastapi import HTTPException
-
 from app.db.supabase import get_supabase_client
+from app.models.schemas import LoginRequest, UserResponse
 
 
 class AuthService:
-    """Servicio de autenticación."""
+    """Servicio de autenticación de usuarios."""
 
     def __init__(self):
-        """Inicializa el servicio de autenticación."""
         self.supabase = get_supabase_client()
 
-    async def login(self, email: str, password: str) -> Dict[str, Any]:
+    def login(self, credentials: LoginRequest) -> UserResponse:
         """
-        Autentica un usuario.
+        Autentica un usuario y retorna su perfil con tokens.
 
         Args:
-            email: Correo electrónico del usuario.
-            password: Contraseña del usuario.
+            credentials: Credenciales de login (email, password)
 
         Returns:
-            Diccionario con los datos del usuario autenticado.
+            UserResponse: Datos del usuario autenticado
 
         Raises:
-            HTTPException: Si las credenciales son inválidas.
+            HTTPException: Si las credenciales son inválidas o el usuario no existe
         """
         try:
-            # Autenticar con Supabase
             auth_response = self.supabase.auth.sign_in_with_password({
-                "email": email,
-                "password": password
+                "email": credentials.email,
+                "password": credentials.password
             })
 
             if not auth_response.user:
@@ -44,7 +40,6 @@ class AuthService:
 
             user_id = auth_response.user.id
 
-            # Obtener perfil del usuario
             profile_response = self.supabase.table("usuarios")\
                 .select("*")\
                 .eq("id", user_id)\
@@ -59,20 +54,29 @@ class AuthService:
 
             user_profile = profile_response.data
 
-            return {
-                "id": user_id,
-                "email": email,
-                "rol": user_profile["rol"],
-                "nombre": user_profile.get("nombre", ""),
-                "access_token": auth_response.session.access_token,
-                "refresh_token": auth_response.session.refresh_token
-            }
+            return UserResponse(
+                id=user_id,
+                email=credentials.email,
+                rol=user_profile["rol"],
+                nombre=user_profile.get("nombre", ""),
+                access_token=auth_response.session.access_token,
+                refresh_token=auth_response.session.refresh_token
+            )
 
         except HTTPException:
             raise
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error durante la autenticación: {str(e)}"
+            )
 
 
-# Instancia única del servicio
-auth_service = AuthService()
+def get_auth_service() -> AuthService:
+    """
+    Factory function para obtener instancia de AuthService.
+
+    Returns:
+        AuthService: Instancia del servicio de autenticación
+    """
+    return AuthService()

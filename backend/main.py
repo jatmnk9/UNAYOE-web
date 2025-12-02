@@ -1,13 +1,12 @@
 """
-API de Análisis de Bienestar Estudiantil.
-
-Sistema de análisis de notas con procesamiento de lenguaje natural,
-detección de emociones y sistema de recomendaciones personalizadas.
+Punto de entrada principal de la aplicación UNAYOE.
+Configura FastAPI con todos los routers y middleware.
 """
+from datetime import datetime
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-from app.config.settings import settings
+from app.config.settings import get_settings
+from app.models.schemas import HealthResponse
 from app.routers import (
     auth,
     users,
@@ -17,82 +16,49 @@ from app.routers import (
     appointments
 )
 
+settings = get_settings()
 
-def create_application() -> FastAPI:
-    """
-    Crea y configura la aplicación FastAPI.
+app = FastAPI(
+    title=settings.app_name,
+    version=settings.api_version,
+    description="Sistema backend para análisis de bienestar estudiantil con NLP",
+    debug=settings.debug
+)
 
-    Returns:
-        FastAPI: Instancia de la aplicación configurada.
-    """
-    application = FastAPI(
-        title=settings.app_name,
-        description="API para análisis de bienestar estudiantil con NLP",
-        version="2.0.0",
-        debug=settings.debug
-    )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_origin_regex=".*",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    # Configurar CORS
-    application.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.get_cors_origins(),
-        allow_origin_regex=".*",
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-
-    # Registrar routers
-    application.include_router(auth.router)
-    application.include_router(users.router)
-    application.include_router(notes.router)
-    application.include_router(analysis.router)
-    application.include_router(recommendations.router)
-    application.include_router(recommendations.router_likes)
-    application.include_router(appointments.router)
-
-    return application
+app.include_router(auth.router)
+app.include_router(users.router)
+app.include_router(notes.router)
+app.include_router(analysis.router)
+app.include_router(recommendations.router)
+app.include_router(appointments.router)
 
 
-# Crear instancia de la aplicación
-app = create_application()
-
-
-@app.get("/")
+@app.get("/", response_model=HealthResponse)
 async def root():
-    """
-    Ruta raíz de la API.
-
-    Returns:
-        Diccionario con información de la API.
-    """
+    """Endpoint raíz - Health check."""
     return {
-        "message": "API de Análisis de Bienestar Estudiantil",
-        "version": "2.0.0",
-        "status": "active",
-        "endpoints": {
-            "auth": "/login",
-            "users": "/usuarios",
-            "notes": "/notas",
-            "analysis": "/analyze, /export",
-            "recommendations": "/recomendaciones",
-            "likes": "/likes",
-            "appointments": "/citas"
-        }
+        "status": "healthy",
+        "version": settings.api_version,
+        "timestamp": datetime.utcnow()
     }
 
 
-@app.get("/health")
+@app.get("/health", response_model=HealthResponse)
 async def health_check():
-    """
-    Verifica el estado de salud de la API.
-
-    Returns:
-        Diccionario con el estado de la API.
-    """
+    """Health check endpoint."""
     return {
         "status": "healthy",
-        "app_name": settings.app_name
+        "version": settings.api_version,
+        "timestamp": datetime.utcnow()
     }
 
 
@@ -102,5 +68,5 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True
+        reload=settings.debug
     )

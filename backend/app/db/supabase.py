@@ -1,27 +1,20 @@
 """
-Cliente de Supabase.
-Gestiona la conexión y proporciona una instancia única del cliente.
+Cliente de Supabase (Singleton).
+Proporciona una única instancia del cliente de base de datos.
 """
 from supabase import create_client, Client
-from app.config.settings import settings
+from functools import lru_cache
+from app.config.settings import get_settings
 
 
-_supabase_client: Client | None = None
-
-
+@lru_cache()
 def get_supabase_client() -> Client:
     """
-    Obtiene la instancia del cliente de Supabase (Singleton).
+    Retorna una instancia única del cliente de Supabase (Singleton).
+    Usa lru_cache para garantizar una sola instancia en toda la aplicación.
 
     Returns:
-        Client: Instancia del cliente de Supabase.
+        Client: Cliente de Supabase configurado
     """
-    global _supabase_client
-
-    if _supabase_client is None:
-        _supabase_client = create_client(
-            settings.supabase_url,
-            settings.supabase_key
-        )
-
-    return _supabase_client
+    settings = get_settings()
+    return create_client(settings.supabase_url, settings.supabase_key)

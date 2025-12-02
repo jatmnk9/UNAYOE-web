@@ -1,57 +1,75 @@
 """
 Configuración centralizada de la aplicación.
-Gestiona variables de entorno y configuraciones globales.
+Utiliza Pydantic Settings para gestión de variables de entorno.
 """
 from pydantic_settings import BaseSettings
 from pydantic import field_validator
 from typing import List, Union
+from functools import lru_cache
 
 
 class Settings(BaseSettings):
     """
-    Configuraciones de la aplicación.
-    Lee valores desde variables de entorno.
+    Configuración de la aplicación.
+    Lee automáticamente del archivo .env
     """
-    # API Configuration
+    # =========================================================
+    # CONFIGURACIÓN DE LA APLICACIÓN
+    # =========================================================
     app_name: str = "API de Análisis de Bienestar"
     debug: bool = True
+    api_version: str = "2.0.0"
 
-    # Supabase Configuration
-    supabase_url: str = "https://xygadfvudziwnddcicbb.supabase.co"
-    supabase_key: str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5Z2FkZnZ1ZHppd25kZGNpY2JiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTUxOTczNCwiZXhwIjoyMDc1MDk1NzM0fQ.KSc84hsragAyua8RhRaekeiJ1mPqtI28sXZmOzdQKOg" 
+    # =========================================================
+    # CONFIGURACIÓN DE SUPABASE
+    # =========================================================
+    supabase_url: str
+    supabase_key: str
 
-    # CORS Configuration - Acepta tanto string como lista
+    # =========================================================
+    # CONFIGURACIÓN DE CORS
+    # =========================================================
     cors_origins: Union[str, List[str]] = "http://localhost:5173,http://127.0.0.1:5173"
 
-    # NLP Model Configuration
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        """Convierte string separado por comas en lista."""
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(",")]
+        return v
+
+    # =========================================================
+    # CONFIGURACIÓN DE MODELOS NLP
+    # =========================================================
     sentiment_model: str = "pysentimiento/robertuito-sentiment-analysis"
     emotion_model: str = "pysentimiento/robertuito-emotion-analysis"
     fallback_model: str = "dccuchile/bert-base-spanish-wwm-cased"
 
-    @field_validator('cors_origins', mode='before')
-    @classmethod
-    def parse_cors_origins(cls, v):
-        """Convierte string separado por comas en lista o mantiene lista existente."""
-        if isinstance(v, str):
-            # Si es un string, lo dividimos por comas
-            return [origin.strip() for origin in v.split(',') if origin.strip()]
-        elif isinstance(v, list):
-            # Si ya es una lista, la devolvemos tal cual
-            return v
-        return v
+    # =========================================================
+    # CONFIGURACIÓN DE GEMINI AI
+    # =========================================================
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.0-flash"
 
-    def get_cors_origins(self) -> List[str]:
-        """Retorna los orígenes CORS como lista."""
-        if isinstance(self.cors_origins, str):
-            return [origin.strip() for origin in self.cors_origins.split(',') if origin.strip()]
-        return self.cors_origins
+    # =========================================================
+    # CONFIGURACIÓN DE EMAIL
+    # =========================================================
+    gmail_sender: str = ""
+    gmail_smtp_password: str = ""
+    alert_fallback_email: str = ""
 
     class Config:
-        """Configuración de Pydantic."""
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
         extra = "ignore"
 
 
-settings = Settings()
+@lru_cache()
+def get_settings() -> Settings:
+    """
+    Retorna una instancia única de Settings (Singleton).
+    Usa lru_cache para garantizar una sola instancia.
+    """
+    return Settings()

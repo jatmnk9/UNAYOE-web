@@ -1,65 +1,37 @@
 """
-Servicio de recomendaciones.
-Gestiona el sistema de recomendaciones basado en contenido y emociones.
+Servicio de gestión de recomendaciones.
 """
 import pandas as pd
 from typing import List, Dict, Any
 from fastapi import HTTPException
-
 from app.db.supabase import get_supabase_client
 
 
 class RecommendationsService:
-    """Servicio de recomendaciones."""
+    """Servicio de gestión de recomendaciones."""
 
     def __init__(self):
-        """Inicializa el servicio de recomendaciones."""
         self.supabase = get_supabase_client()
 
-    async def obtener_todas_recomendaciones(self) -> List[Dict[str, Any]]:
-        """
-        Obtiene todas las recomendaciones disponibles.
-
-        Returns:
-            Lista de todas las recomendaciones.
-
-        Raises:
-            HTTPException: Si ocurre un error al obtener las recomendaciones.
-        """
+    def obtener_todas_recomendaciones(self) -> List[Dict[str, Any]]:
+        """Obtiene todas las recomendaciones disponibles."""
         try:
-            response = self.supabase.table("recomendaciones")\
-                .select("*")\
-                .execute()
-
-            if not response.data:
-                return []
-
-            return response.data
-
+            response = self.supabase.table("recomendaciones").select("*").execute()
+            return response.data or []
         except Exception as e:
             raise HTTPException(
                 status_code=500,
-                detail=f"Error interno al buscar todas las recomendaciones: {e}"
+                detail=f"Error al obtener recomendaciones: {str(e)}"
             )
 
-    async def obtener_recomendaciones_personalizadas(
+    def obtener_recomendaciones_personalizadas(
         self,
         user_id: str
     ) -> Dict[str, Any]:
         """
-        Genera recomendaciones personalizadas basadas en emociones y gustos.
-
-        Args:
-            user_id: ID del usuario.
-
-        Returns:
-            Diccionario con las recomendaciones personalizadas.
-
-        Raises:
-            HTTPException: Si ocurre un error al generar las recomendaciones.
+        Genera recomendaciones personalizadas basadas en emociones y likes del usuario.
         """
         try:
-            # Obtener últimas emociones del usuario
             notas_response = self.supabase.table("notas")\
                 .select("emocion, sentimiento")\
                 .eq("usuario_id", user_id)\
@@ -69,53 +41,39 @@ class RecommendationsService:
 
             notas_data = notas_response.data or []
 
-            # Obtener emociones de los likes
             likes_response = self.supabase.table("likes_recomendaciones")\
                 .select("recomendaciones:recomendacion_id(emocion_objetivo, sentimiento_objetivo)")\
                 .eq("user_id", user_id)\
                 .execute()
 
             likes_data = [
-                r["recomendaciones"]
-                for r in likes_response.data
+                r["recomendaciones"] for r in likes_response.data
                 if r.get("recomendaciones")
             ]
 
-            # Combinar emociones
-            emociones = (
-                [n["emocion"] for n in notas_data] +
-                [l["emocion_objetivo"] for l in likes_data]
-            )
-            sentimientos = (
-                [n["sentimiento"] for n in notas_data] +
-                [l["sentimiento_objetivo"] for l in likes_data]
-            )
+            emociones = [n["emocion"] for n in notas_data] + \
+                       [l["emocion_objetivo"] for l in likes_data]
+            sentimientos = [n["sentimiento"] for n in notas_data] + \
+                          [l["sentimiento_objetivo"] for l in likes_data]
 
-            # Si no hay datos, devolver recomendaciones generales
             if not emociones:
-                recs = await self.obtener_todas_recomendaciones()
+                recs = self.supabase.table("recomendaciones").select("*").execute()
                 return {
                     "message": "Recomendaciones generales",
-                    "data": recs
+                    "data": recs.data,
+                    "emocion_detectada": None,
+                    "sentimiento_detectado": None
                 }
 
-            # Calcular emociones principales
             emocion_principal = pd.Series(emociones).mode()[0]
             sentimiento_principal = pd.Series(sentimientos).mode()[0]
 
-            # Buscar coincidencias
-            recs_response = self.supabase.table("recomendaciones")\
-                .select("*")\
-                .execute()
-
+            recs_response = self.supabase.table("recomendaciones").select("*").execute()
             df = pd.DataFrame(recs_response.data)
-            mask = (
-                (df["emocion_objetivo"] == emocion_principal) |
-                (df["sentimiento_objetivo"] == sentimiento_principal)
-            )
+            mask = (df["emocion_objetivo"] == emocion_principal) | \
+                   (df["sentimiento_objetivo"] == sentimiento_principal)
             recomendadas = df[mask]
 
-            # Si no hay coincidencias, devolver aleatorias
             if recomendadas.empty:
                 recomendadas = df.sample(min(3, len(df)))
 
@@ -129,114 +87,71 @@ class RecommendationsService:
         except Exception as e:
             raise HTTPException(
                 status_code=500,
-                detail=f"Error generando recomendaciones: {e}"
+                detail=f"Error generando recomendaciones: {str(e)}"
             )
 
-    async def obtener_favoritos_usuario(
-        self,
-        user_id: str
-    ) -> List[Dict[str, Any]]:
-        """
-        Obtiene las recomendaciones favoritas de un usuario.
-
-        Args:
-            user_id: ID del usuario.
-
-        Returns:
-            Lista de recomendaciones favoritas.
-
-        Raises:
-            HTTPException: Si ocurre un error al obtener los favoritos.
-        """
+    def obtener_favoritos_usuario(self, user_id: str) -> List[Dict[str, Any]]:
+        """Obtiene las recomendaciones favoritas de un usuario."""
         try:
             response = self.supabase.table("likes_recomendaciones")\
                 .select("recomendaciones(*)")\
                 .eq("user_id", user_id)\
                 .execute()
 
-            if not response.data:
-                return []
-
-            favoritas = [
-                item["recomendaciones"]
-                for item in response.data
-                if item.get("recomendaciones")
-            ]
-
-            return favoritas
+            if response.data:
+                return [
+                    item["recomendaciones"] for item in response.data
+                    if item.get("recomendaciones")
+                ]
+            return []
 
         except Exception as e:
             raise HTTPException(
                 status_code=500,
-                detail=f"Error interno al buscar favoritos: {e}"
+                detail=f"Error al obtener favoritos: {str(e)}"
             )
 
-    async def agregar_like(
-        self,
-        user_id: str,
-        recomendacion_id: str
-    ) -> Dict[str, str]:
-        """
-        Agrega un like a una recomendación.
-
-        Args:
-            user_id: ID del usuario.
-            recomendacion_id: ID de la recomendación.
-
-        Returns:
-            Diccionario con mensaje de confirmación.
-        """
+    def agregar_like(self, user_id: str, recomendacion_id: str) -> Dict[str, str]:
+        """Agrega un like a una recomendación."""
         try:
             self.supabase.table("likes_recomendaciones").insert({
                 "user_id": user_id,
                 "recomendacion_id": recomendacion_id
             }).execute()
-
             return {"message": "Like agregado"}
-
         except Exception as e:
-            return {"message": f"No se pudo agregar el like: {e}"}
+            return {"message": f"No se pudo agregar el like: {str(e)}"}
 
-    async def eliminar_like(
-        self,
-        user_id: str,
-        recomendacion_id: str
-    ) -> Dict[str, str]:
-        """
-        Elimina un like de una recomendación.
+    def eliminar_like(self, user_id: str, recomendacion_id: str) -> Dict[str, str]:
+        """Elimina un like de una recomendación."""
+        try:
+            self.supabase.table("likes_recomendaciones")\
+                .delete()\
+                .eq("user_id", user_id)\
+                .eq("recomendacion_id", recomendacion_id)\
+                .execute()
+            return {"message": "Like eliminado"}
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error al eliminar like: {str(e)}"
+            )
 
-        Args:
-            user_id: ID del usuario.
-            recomendacion_id: ID de la recomendación.
-
-        Returns:
-            Diccionario con mensaje de confirmación.
-        """
-        self.supabase.table("likes_recomendaciones")\
-            .delete()\
-            .eq("user_id", user_id)\
-            .eq("recomendacion_id", recomendacion_id)\
-            .execute()
-
-        return {"message": "Like eliminado"}
-
-    async def obtener_likes_usuario(self, user_id: str) -> List[str]:
-        """
-        Obtiene los IDs de las recomendaciones que le gustan al usuario.
-
-        Args:
-            user_id: ID del usuario.
-
-        Returns:
-            Lista de IDs de recomendaciones.
-        """
-        response = self.supabase.table("likes_recomendaciones")\
-            .select("recomendacion_id")\
-            .eq("user_id", user_id)\
-            .execute()
-
-        return [r["recomendacion_id"] for r in response.data]
+    def obtener_likes_usuario(self, user_id: str) -> List[str]:
+        """Obtiene IDs de recomendaciones con like del usuario."""
+        try:
+            res = self.supabase.table("likes_recomendaciones")\
+                .select("recomendacion_id")\
+                .eq("user_id", user_id)\
+                .execute()
+            return [r["recomendacion_id"] for r in res.data]
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error al obtener likes: {str(e)}"
+            )
 
 
-# Instancia única del servicio
-recommendations_service = RecommendationsService()
+def get_recommendations_service() -> RecommendationsService:
+    """Factory function para obtener instancia de RecommendationsService."""
+    return RecommendationsService()
