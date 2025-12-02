@@ -7,7 +7,19 @@
       "Bash(dir /s /b backend*.py)",
       "Bash(dir /s /b c:UsersAdministradorDocumentsTareaUNAYOE-webbackend*.py)",
       "Bash(cat:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(dir /s /b \"c:\\Users\\Administrador\\Documents\\Tarea\\UNAYOE-web\\frontend\\src\")",
+      "Bash(findstr:*)",
+      "Bash(if exist src-old rmdir /s /q src-old)",
+      "Bash(move:*)",
+      "Bash(npm install)",
+      "Bash(if [ -d \"src-old\" ])",
+      "Bash(then rm -rf src-old)",
+      "Bash(fi)",
+      "Bash(if [ -d \"src\" ])",
+      "Bash(then echo \"src exists\")",
+      "Bash(else echo \"src does not exist\")",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []
