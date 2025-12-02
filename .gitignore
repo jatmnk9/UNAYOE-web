@@ -15,6 +15,7 @@ __pycache__/
 *$py.class
 *.so
 .Python
+.claude
 
 # Distribución / empaquetado
 build/
