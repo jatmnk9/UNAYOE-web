@@ -1,6 +1,8 @@
+import { LoadingSpinner } from '@/shared/components/ui/loading';
+import { ToastProvider } from '@/shared/components/ui/toast';
 import * as React from 'react';
 import { Suspense } from 'react';
-import { Spinner } from '../../shared/components/ui/loading';
+
 
 interface AppProvidersProps {
   children: React.ReactNode;
@@ -11,14 +13,16 @@ interface AppProvidersProps {
  */
 export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
   return (
-    <Suspense
-      fallback={
-        <div className="flex h-screen items-center justify-center">
-          <Spinner size="lg" />
-        </div>
-      }
-    >
-      {children}
-    </Suspense>
+    <ToastProvider>
+      <Suspense
+        fallback={
+          <div className="flex h-screen items-center justify-center">
+            <LoadingSpinner size="lg" />
+          </div>
+        }
+      >
+        {children}
+      </Suspense>
+    </ToastProvider>
   );
 };

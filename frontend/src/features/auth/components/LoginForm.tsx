@@ -1,8 +1,6 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../../../shared/components/ui/button';
-import { Input } from '../../../shared/components/ui/input';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../../../shared/components/ui/toast';
 import { ROUTES } from '../../../core/config/constants';
@@ -70,56 +68,114 @@ export const LoginForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full space-y-6">
-      <Input
-        id="email"
-        name="email"
-        type="email"
-        label="Correo electrónico"
-        placeholder="tu@correo.com"
-        value={formData.email}
-        onChange={handleChange}
-        error={formErrors.email}
-        required
-        autoComplete="email"
-      />
-
-      <Input
-        id="password"
-        name="password"
-        type="password"
-        label="Contraseña"
-        placeholder="••••••••"
-        value={formData.password}
-        onChange={handleChange}
-        error={formErrors.password}
-        required
-        autoComplete="current-password"
-      />
-
-      <div className="flex items-center justify-between">
-        <label className="flex items-center">
-          <input type="checkbox" className="mr-2 h-4 w-4 rounded border-gray-300" />
-          <span className="text-sm text-gray-600">Recordarme</span>
+    <form onSubmit={handleSubmit} className="space-y-5">
+      {/* Campo de correo */}
+      <div className="space-y-2">
+        <label htmlFor="email" className="block text-sm font-medium text-gray-900">
+          Correo Institucional
         </label>
-        <a href="#" className="text-sm text-[var(--color-primary)] hover:underline">
+        <input
+          id="email"
+          name="email"
+          type="email"
+          placeholder="correo@institucion.com"
+          value={formData.email}
+          onChange={handleChange}
+          required
+          autoComplete="email"
+          className={`w-full px-4 py-3 rounded-lg border ${
+            formErrors.email
+              ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
+              : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500/20'
+          } focus:ring-4 outline-none transition-all duration-200 bg-gray-50/50`}
+        />
+        {formErrors.email && (
+          <p className="text-sm text-red-600 mt-1">{formErrors.email}</p>
+        )}
+      </div>
+
+      {/* Campo de contraseña */}
+      <div className="space-y-2">
+        <label htmlFor="password" className="block text-sm font-medium text-gray-900">
+          Contraseña
+        </label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          placeholder="••••••••"
+          value={formData.password}
+          onChange={handleChange}
+          required
+          autoComplete="current-password"
+          className={`w-full px-4 py-3 rounded-lg border ${
+            formErrors.password
+              ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
+              : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500/20'
+          } focus:ring-4 outline-none transition-all duration-200 bg-gray-50/50`}
+        />
+        {formErrors.password && (
+          <p className="text-sm text-red-600 mt-1">{formErrors.password}</p>
+        )}
+      </div>
+
+      {/* Recordarme / Olvidaste contraseña */}
+      <div className="flex items-center justify-between pt-2">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 cursor-pointer"
+            style={{ accentColor: 'var(--color-primary)' }}
+          />
+          <span className="text-sm text-gray-600">Recuérdame</span>
+        </label>
+        <a
+          href="#"
+          className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+        >
           ¿Olvidaste tu contraseña?
         </a>
       </div>
 
+      {/* Mensaje de error */}
       {error && (
-        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>
+        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
+          {error}
+        </div>
       )}
 
-      <Button type="submit" className="w-full" isLoading={isLoading}>
-        Iniciar sesión
-      </Button>
+      {/* Botón de submit */}
+      <button
+        type="submit"
+        disabled={isLoading}
+        className="w-full h-11 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold rounded-lg transition-all duration-200 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+      >
+        {isLoading ? (
+          <span className="flex items-center justify-center gap-2">
+            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            Iniciando sesión...
+          </span>
+        ) : (
+          'Iniciar Sesión'
+        )}
+      </button>
 
+      {/* Divider */}
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-200" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-white text-gray-500">o</span>
+        </div>
+      </div>
+
+      {/* Link a registro */}
       <p className="text-center text-sm text-gray-600">
         ¿No tienes cuenta?{' '}
         <a
           href={ROUTES.SIGNUP}
-          className="font-medium text-[var(--color-primary)] hover:underline"
+          className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
         >
           Regístrate aquí
         </a>

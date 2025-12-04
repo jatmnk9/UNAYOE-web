@@ -23,12 +23,13 @@
     "noFallthroughCasesInSwitch": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-
+    "ignoreDeprecations":"6.0",
     /* Path aliases */
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
+    
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

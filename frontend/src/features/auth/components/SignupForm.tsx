@@ -1,8 +1,6 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../../../shared/components/ui/button';
-import { Input } from '../../../shared/components/ui/input';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../../../shared/components/ui/toast';
 import { ROUTES, USER_ROLES } from '../../../core/config/constants';
@@ -96,89 +94,167 @@ export const SignupForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full space-y-6">
-      <Input
-        id="nombre"
-        name="nombre"
-        type="text"
-        label="Nombre completo"
-        placeholder="Juan Pérez"
-        value={formData.nombre}
-        onChange={handleChange}
-        error={formErrors.nombre}
-        required
-        autoComplete="name"
-      />
+    <form onSubmit={handleSubmit} className="space-y-5">
+      {/* Grid de 2 columnas para campos */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Nombre completo */}
+        <div className="sm:col-span-2 space-y-2">
+          <label htmlFor="nombre" className="block text-sm font-medium text-gray-900">
+            Nombre completo
+          </label>
+          <input
+            id="nombre"
+            name="nombre"
+            type="text"
+            placeholder="Juan Pérez"
+            value={formData.nombre}
+            onChange={handleChange}
+            required
+            autoComplete="name"
+            className={`w-full px-4 py-3 rounded-lg border ${
+              formErrors.nombre
+                ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
+                : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500/20'
+            } focus:ring-4 outline-none transition-all duration-200 bg-gray-50/50`}
+          />
+          {formErrors.nombre && (
+            <p className="text-sm text-red-600 mt-1">{formErrors.nombre}</p>
+          )}
+        </div>
 
-      <Input
-        id="email"
-        name="email"
-        type="email"
-        label="Correo electrónico"
-        placeholder="tu@correo.com"
-        value={formData.email}
-        onChange={handleChange}
-        error={formErrors.email}
-        required
-        autoComplete="email"
-      />
+        {/* Correo electrónico */}
+        <div className="sm:col-span-2 space-y-2">
+          <label htmlFor="email" className="block text-sm font-medium text-gray-900">
+            Correo Institucional
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="correo@institucion.com"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            autoComplete="email"
+            className={`w-full px-4 py-3 rounded-lg border ${
+              formErrors.email
+                ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
+                : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500/20'
+            } focus:ring-4 outline-none transition-all duration-200 bg-gray-50/50`}
+          />
+          {formErrors.email && (
+            <p className="text-sm text-red-600 mt-1">{formErrors.email}</p>
+          )}
+        </div>
 
-      <div className="w-full">
-        <label htmlFor="rol" className="mb-2 block text-sm font-medium text-gray-700">
-          Tipo de usuario
-        </label>
-        <select
-          id="rol"
-          name="rol"
-          value={formData.rol}
-          onChange={handleChange}
-          className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm transition-colors focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2"
-          required
-        >
-          <option value={USER_ROLES.STUDENT}>Estudiante</option>
-          <option value={USER_ROLES.PSYCHOLOGIST}>Psicólogo</option>
-        </select>
+        {/* Tipo de usuario */}
+        <div className="sm:col-span-2 space-y-2">
+          <label htmlFor="rol" className="block text-sm font-medium text-gray-900">
+            Tipo de Cuenta
+          </label>
+          <select
+            id="rol"
+            name="rol"
+            value={formData.rol}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 outline-none transition-all duration-200 bg-gray-50/50"
+          >
+            <option value={USER_ROLES.STUDENT}>Estudiante</option>
+            <option value={USER_ROLES.PSYCHOLOGIST}>Psicólogo</option>
+          </select>
+        </div>
+
+        {/* Contraseña */}
+        <div className="space-y-2">
+          <label htmlFor="password" className="block text-sm font-medium text-gray-900">
+            Contraseña
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="Mínimo 6 caracteres"
+            value={formData.password}
+            onChange={handleChange}
+            required
+            autoComplete="new-password"
+            className={`w-full px-4 py-3 rounded-lg border ${
+              formErrors.password
+                ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
+                : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500/20'
+            } focus:ring-4 outline-none transition-all duration-200 bg-gray-50/50`}
+          />
+          {formErrors.password && (
+            <p className="text-sm text-red-600 mt-1">{formErrors.password}</p>
+          )}
+        </div>
+
+        {/* Confirmar contraseña */}
+        <div className="space-y-2">
+          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-900">
+            Confirmar Contraseña
+          </label>
+          <input
+            id="confirmPassword"
+            name="confirmPassword"
+            type="password"
+            placeholder="Repite tu contraseña"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            required
+            autoComplete="new-password"
+            className={`w-full px-4 py-3 rounded-lg border ${
+              formErrors.confirmPassword
+                ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
+                : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500/20'
+            } focus:ring-4 outline-none transition-all duration-200 bg-gray-50/50`}
+          />
+          {formErrors.confirmPassword && (
+            <p className="text-sm text-red-600 mt-1">{formErrors.confirmPassword}</p>
+          )}
+        </div>
       </div>
 
-      <Input
-        id="password"
-        name="password"
-        type="password"
-        label="Contraseña"
-        placeholder="••••••••"
-        value={formData.password}
-        onChange={handleChange}
-        error={formErrors.password}
-        required
-        autoComplete="new-password"
-      />
-
-      <Input
-        id="confirmPassword"
-        name="confirmPassword"
-        type="password"
-        label="Confirmar contraseña"
-        placeholder="••••••••"
-        value={formData.confirmPassword}
-        onChange={handleChange}
-        error={formErrors.confirmPassword}
-        required
-        autoComplete="new-password"
-      />
-
+      {/* Mensaje de error */}
       {error && (
-        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>
+        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
+          {error}
+        </div>
       )}
 
-      <Button type="submit" className="w-full" isLoading={isLoading}>
-        Crear cuenta
-      </Button>
+      {/* Botón de submit */}
+      <button
+        type="submit"
+        disabled={isLoading}
+        className="w-full h-11 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold rounded-lg transition-all duration-200 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+      >
+        {isLoading ? (
+          <span className="flex items-center justify-center gap-2">
+            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            Creando cuenta...
+          </span>
+        ) : (
+          'Crear Cuenta'
+        )}
+      </button>
 
+      {/* Divider */}
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-200" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-white text-gray-500">o</span>
+        </div>
+      </div>
+
+      {/* Link a login */}
       <p className="text-center text-sm text-gray-600">
         ¿Ya tienes cuenta?{' '}
         <a
           href={ROUTES.LOGIN}
-          className="font-medium text-[var(--color-primary)] hover:underline"
+          className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
         >
           Inicia sesión
         </a>

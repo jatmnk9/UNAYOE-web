@@ -102,7 +102,7 @@ apiClient.interceptors.response.use(
  */
 export const get = async <T = any>(url: string, params?: any): Promise<T> => {
   const response = await apiClient.get<ApiResponse<T>>(url, { params });
-  return response.data.data || response.data;
+  return response.data.data !== undefined ? response.data.data : (response.data as T);
 };
 
 /**
@@ -110,7 +110,7 @@ export const get = async <T = any>(url: string, params?: any): Promise<T> => {
  */
 export const post = async <T = any>(url: string, data?: any, config?: any): Promise<T> => {
   const response = await apiClient.post<ApiResponse<T>>(url, data, config);
-  return response.data.data || response.data;
+  return response.data.data !== undefined ? response.data.data : (response.data as T);
 };
 
 /**
@@ -118,7 +118,7 @@ export const post = async <T = any>(url: string, data?: any, config?: any): Prom
  */
 export const put = async <T = any>(url: string, data?: any): Promise<T> => {
   const response = await apiClient.put<ApiResponse<T>>(url, data);
-  return response.data.data || response.data;
+  return response.data.data !== undefined ? response.data.data : (response.data as T);
 };
 
 /**
@@ -126,7 +126,7 @@ export const put = async <T = any>(url: string, data?: any): Promise<T> => {
  */
 export const del = async <T = any>(url: string): Promise<T> => {
   const response = await apiClient.delete<ApiResponse<T>>(url);
-  return response.data.data || response.data;
+  return response.data.data !== undefined ? response.data.data : (response.data as T);
 };
 
 /**
@@ -134,7 +134,7 @@ export const del = async <T = any>(url: string): Promise<T> => {
  */
 export const patch = async <T = any>(url: string, data?: any): Promise<T> => {
   const response = await apiClient.patch<ApiResponse<T>>(url, data);
-  return response.data.data || response.data;
+  return response.data.data !== undefined ? response.data.data : (response.data as T);
 };
 
 export default apiClient;

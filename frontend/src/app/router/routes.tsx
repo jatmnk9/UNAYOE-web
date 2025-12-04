@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { lazy } from 'react';
-import { RouteObject } from 'react-router-dom';
+import { RouteObject, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from '../../shared/components/routing';
 import { StudentLayout } from '../../shared/components/layout';
 import { PsychologistLayout } from '../../shared/components/layout';
@@ -13,9 +13,9 @@ const LoginPage = lazy(() =>
   }))
 );
 
-const RegisterPage = lazy(() =>
+const SignupPage = lazy(() =>
   import('../../features/auth/pages').then((module) => ({
-    default: module.RegisterPage,
+    default: module.SignupPage,
   }))
 );
 
@@ -43,6 +43,50 @@ const PsychologistDashboardPage = lazy(() =>
   }))
 );
 
+// Componente para página no autorizada
+const UnauthorizedPage: React.FC = () => {
+  return (
+    <div className="flex h-screen items-center justify-center">
+      <div className="text-center">
+        <h1 className="mb-4 text-4xl font-bold text-red-600">
+          Acceso Denegado
+        </h1>
+        <p className="mb-4 text-gray-600">
+          No tienes permisos para acceder a esta página.
+        </p>
+        <a
+          href="/login"
+          className="text-[var(--color-primary)] hover:underline"
+        >
+          Volver al inicio
+        </a>
+      </div>
+    </div>
+  );
+};
+
+// Componente para página 404
+const NotFoundPage: React.FC = () => {
+  return (
+    <div className="flex h-screen items-center justify-center">
+      <div className="text-center">
+        <h1 className="mb-4 text-4xl font-bold text-gray-700">
+          404 - Página no encontrada
+        </h1>
+        <p className="mb-4 text-gray-600">
+          La página que buscas no existe.
+        </p>
+        <a
+          href="/login"
+          className="text-[var(--color-primary)] hover:underline"
+        >
+          Volver al inicio
+        </a>
+      </div>
+    </div>
+  );
+};
+
 /**
  * Configuración de rutas de la aplicación
  */
@@ -57,7 +101,7 @@ export const routes: RouteObject[] = [
       },
       {
         path: '/register',
-        element: <RegisterPage />,
+        element: <SignupPage />,
       },
     ],
   },
@@ -112,55 +156,21 @@ export const routes: RouteObject[] = [
     ],
   },
 
-  // Ruta raíz - redirige según rol
+  // Ruta raíz - redirige a login
   {
     path: '/',
-    element: <LoginPage />,
+    element: <Navigate to="/login" replace />,
   },
 
   // Ruta no autorizada
   {
     path: '/unauthorized',
-    element: (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <h1 className="mb-4 text-4xl font-bold text-red-600">
-            Acceso Denegado
-          </h1>
-          <p className="mb-4 text-gray-600">
-            No tienes permisos para acceder a esta página.
-          </p>
-          <a
-            href="/login"
-            className="text-[var(--color-primary)] hover:underline"
-          >
-            Volver al inicio
-          </a>
-        </div>
-      </div>
-    ),
+    element: <UnauthorizedPage />,
   },
 
   // Ruta 404
   {
     path: '*',
-    element: (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <h1 className="mb-4 text-4xl font-bold text-gray-700">
-            404 - Página no encontrada
-          </h1>
-          <p className="mb-4 text-gray-600">
-            La página que buscas no existe.
-          </p>
-          <a
-            href="/login"
-            className="text-[var(--color-primary)] hover:underline"
-          >
-            Volver al inicio
-          </a>
-        </div>
-      </div>
-    ),
+    element: <NotFoundPage />,
   },
 ];
