@@ -19,7 +19,10 @@
       "Bash(if [ -d \"src\" ])",
       "Bash(then echo \"src exists\")",
       "Bash(else echo \"src does not exist\")",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(dir:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []
