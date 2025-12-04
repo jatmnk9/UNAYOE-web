@@ -19,7 +19,7 @@ export default function ChatbotWindow({ onClose }) {
     setCargando(true);
 
     try {
-      const res = await fetch("http://localhost:8000/chatbot", {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/chatbot`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
