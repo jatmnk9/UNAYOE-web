@@ -17,7 +17,4 @@ __all__ = [
     "analysis",
     "recommendations"
 ]
-=======
-Módulo de routers/controladores.
-"""
->>>>>>> main
+

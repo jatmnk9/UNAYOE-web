@@ -17,7 +17,3 @@ __all__ = [
     "RecommendationsService",
     "UsersService"
 ]
-=======
-Módulo de servicios (lógica de negocio).
-"""
->>>>>>> main
