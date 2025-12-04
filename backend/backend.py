@@ -151,31 +151,6 @@ def preprocesar_texto(texto):
     tokens_limpios = [token for token in tokens if token not in stop_words and len(token) > 2]
     return " ".join(tokens_limpios), tokens_limpios
 
-@app.post("/attendance-insight")
-async def generate_attendance_insight(payload: dict):
-    texts = payload.get("texts", [])
-    if not texts:
-        raise HTTPException(status_code=400, detail="No se proporcionaron aprendizajes.")
-
-    prompt = (
-        "Eres un psicólogo universitario. Analiza brevemente los siguientes aprendizajes obtenidos por el estudiante en sus citas y genera:\n"
-        "- Un resumen breve (máximo 3 líneas).\n"
-        "- Una recomendación breve y concreta como plan de acción para la siguiente sesión (máximo 2 líneas).\n"
-        "El resultado debe estar en español, estar en prosa, ser breve y ser útil para el psicólogo.\n\n"
-    )
-    for idx, t in enumerate(texts):
-        prompt += f"Aprendizaje {idx+1}: {t}\n"
-    prompt += "\nInsight y plan de acción:"
-
-    try:
-        genai.configure(api_key="AIzaSyBJ0fo-zWzwu4licYxom3bYXLtB5qoal4k")
-        model = genai.GenerativeModel("gemini-2.5-flash")
-        response = model.generate_content(prompt)
-        summary = response.text.strip()
-        return {"summary": summary}
-    except Exception as e:
-        print(f"Error en Gemini: {e}")
-        raise HTTPException(status_code=500, detail=f"Error generando insight: {e}")
     
 @app.post("/asistencia")
 async def registrar_asistencia(asistencia: AsistenciaRequest):
@@ -504,6 +479,32 @@ async def analyze_asistencia_aprendizaje(user_id: str):
         "notes": data
     }
 
+@app.post("/attendance-insight")
+async def generate_attendance_insight(payload: dict):
+    texts = payload.get("texts", [])
+    if not texts:
+        raise HTTPException(status_code=400, detail="No se proporcionaron aprendizajes.")
+
+    prompt = (
+        "Eres un psicólogo universitario. Analiza brevemente los siguientes aprendizajes obtenidos por el estudiante en sus citas y genera:\n"
+        "- Un resumen breve (máximo 3 líneas).\n"
+        "- Una recomendación breve y concreta como plan de acción para la siguiente sesión (máximo 2 líneas).\n"
+        "El resultado debe estar en español, estar en prosa, ser breve y ser útil para el psicólogo.\n\n"
+    )
+    for idx, t in enumerate(texts):
+        prompt += f"Aprendizaje {idx+1}: {t}\n"
+    prompt += "\nInsight y plan de acción:"
+
+    try:
+        genai.configure(api_key="AIzaSyBJ0fo-zWzwu4licYxom3bYXLtB5qoal4k")
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        response = model.generate_content(prompt)
+        summary = response.text.strip()
+        return {"summary": summary}
+    except Exception as e:
+        print(f"Error en Gemini: {e}")
+        raise HTTPException(status_code=500, detail=f"Error generando insight: {e}")
+
 @app.post("/attendance-chatbot")
 async def attendance_chatbot(payload: dict):
     context = payload.get("context", {})
@@ -511,18 +512,26 @@ async def attendance_chatbot(payload: dict):
     if not question:
         raise HTTPException(status_code=400, detail="No se proporcionó pregunta.")
 
-    # Construye el prompt solo con emociones y sentimientos
-    prompt = "Contexto del estudiante:\n"
+    # Construye el prompt enfocado en conversación breve y natural
+    prompt = (
+        "Eres un asistente psicológico empático y conversacional. "
+        "Responde de forma breve (1 a 3 líneas), con tono cálido, humano y natural. "
+        "Anima a seguir conversando o preguntando. Evita respuestas largas o formales.\n\n"
+        "Contexto del estudiante:\n"
+    )
+
     if context.get("sentimientos"):
         prompt += f"Sentimientos: {context['sentimientos']}\n"
     if context.get("emociones"):
         prompt += f"Emociones: {context['emociones']}\n"
+
     prompt += f"\nConsulta del psicólogo: {question}\nRespuesta:"
 
-    # Gemini
+    # Configura Gemini
     genai.configure(api_key="AIzaSyBJ0fo-zWzwu4licYxom3bYXLtB5qoal4k")
     model = genai.GenerativeModel("gemini-2.5-flash")
     response = model.generate_content(prompt)
+
     answer = response.text.strip()
     return {"answer": answer}
 
