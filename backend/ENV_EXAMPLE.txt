@@ -1,0 +1,33 @@
+# ============================================================
+# ARCHIVO DE EJEMPLO - COPIAR A .env Y COMPLETAR CON TUS VALORES
+# ============================================================
+# INSTRUCCIONES:
+# 1. Copia este archivo como .env en la carpeta backend/
+# 2. Completa los valores con tus credenciales reales
+# 3. NUNCA comitees el archivo .env al repositorio
+# ============================================================
+
+# Supabase Configuration
+SUPABASE_URL=https://xygadfvudziwnddcicbb.supabase.co
+SUPABASE_SERVICE_KEY=tu_supabase_service_key_aqui
+
+# Gemini AI Configuration
+GEMINI_API_KEY=tu_gemini_api_key_aqui
+GEMINI_MODEL=gemini-2.5-flash
+GEMINI_ACCOMPANIMENT_MODEL=gemini-2.0-flash
+
+# Email Configuration (Gmail SMTP)
+GMAIL_SENDER=unayoesupabase@gmail.com
+GMAIL_SMTP_PASSWORD=tu_gmail_app_password_aqui
+ALERT_FALLBACK_EMAIL=fallback@example.com
+
+# Gmail API Configuration (Optional - dejar vacío si no se usa)
+GMAIL_SERVICE_ACCOUNT_JSON=
+GMAIL_DELEGATED_USER=
+
+# CORS Configuration
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+
+# Environment
+ENVIRONMENT=development
+
