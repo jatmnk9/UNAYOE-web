@@ -77,3 +77,39 @@ class FaceVerifyRequest(BaseModel):
     user_id: str
     frame_base64: str
 
+
+# =========================================================
+# ESQUEMAS DE CITAS
+# =========================================================
+
+class CitaCreate(BaseModel):
+    """Schema for creating an appointment"""
+    titulo: str
+    fecha_cita: str  # ISO datetime string
+
+
+class CitaUpdate(BaseModel):
+    """Schema for updating an appointment"""
+    titulo: Optional[str] = None
+    fecha_cita: Optional[str] = None
+
+
+class CitaAsignarPsicologo(BaseModel):
+    """Schema for assigning a psychologist to an appointment"""
+    id_psicologo: str
+
+
+class CitaResponse(BaseModel):
+    """Schema for appointment response"""
+    id_cita: int
+    titulo: str
+    fecha_creacion: str
+    fecha_cita: str
+    id_usuario: str
+    id_psicologo: Optional[str] = None
+    nombre_usuario: Optional[str] = None
+    apellido_usuario: Optional[str] = None
+    correo_usuario: Optional[str] = None
+    nombre_psicologo: Optional[str] = None
+    apellido_psicologo: Optional[str] = None
+
