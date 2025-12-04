@@ -309,13 +309,30 @@ export default function StudentAttendanceReport() {
                             paddingRight: "0.5rem"
                         }}>
                             {notes.map((n) => {
-                                // Color para sentimiento (si lo tienes en el análisis)
+                                // Color para sentimiento
                                 let sentimientoColor = "var(--color-primary)";
-                                if (n.sentimiento === "Sadness") sentimientoColor = "#d72660";
-                                else if (n.sentimiento === "Joy") sentimientoColor = "#2563eb";
+                                if (n.sentimiento === "NEG") sentimientoColor = "#d72660";
+                                else if (n.sentimiento === "POS") sentimientoColor = "#2563eb";
+                                else if (n.sentimiento === "NEU") sentimientoColor = "#f59e0b";
                                 // Color para emoción
                                 let emocionBg = "#e4f3ff";
                                 let emocionColor = "#2563eb";
+                                if (n.emocion === "sadness") {
+                                    emocionBg = "#fee2e2";
+                                    emocionColor = "#dc2626";
+                                } else if (n.emocion === "joy") {
+                                    emocionBg = "#fef3c7";
+                                    emocionColor = "#d97706";
+                                } else if (n.emocion === "anger") {
+                                    emocionBg = "#fee2e2";
+                                    emocionColor = "#b91c1c";
+                                } else if (n.emocion === "fear") {
+                                    emocionBg = "#e0e7ff";
+                                    emocionColor = "#3730a3";
+                                } else if (n.emocion === "surprise") {
+                                    emocionBg = "#ecfdf5";
+                                    emocionColor = "#047857";
+                                }
                                 return (
                                     <div key={n.id_asistencia || n.id} style={{
                                         background: "#fff",

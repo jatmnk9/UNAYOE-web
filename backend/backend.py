@@ -244,10 +244,24 @@ async def analyze_asistencia_aprendizaje(user_id: str):
     # 4. Crear visualizaciones usando servicio
     analysis_images = VisualizationService.create_visualizations(df_analizado)
 
+    # 5. Mergear resultados del análisis con las notas originales
+    analyzed_notes = []
+    for i, note in enumerate(data):
+        if i < len(df_analizado):
+            analysis_result = df_analizado.iloc[i]
+            analyzed_notes.append({
+                **note,  # Mantener todos los campos originales
+                'sentimiento': analysis_result['sentimiento'],
+                'emocion': analysis_result['emocion'],
+                'emocion_score': analysis_result['emocion_score']
+            })
+        else:
+            analyzed_notes.append(note)
+
     return {
         "message": "Análisis de aprendizajes completado con éxito",
         "analysis": analysis_images,
-        "notes": data
+        "notes": analyzed_notes
     }
 
 @app.post("/attendance-insight")

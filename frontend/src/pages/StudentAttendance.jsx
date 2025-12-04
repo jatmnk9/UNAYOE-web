@@ -1,10 +1,10 @@
-import { useState, useContext } from "react";
+import { useState } from "react";
 import { useAuth } from "../context/AuthContext"; // Igual que en MiDiarioDeBienestar
 
 // =========================================================
 // 🎙️ NUEVO: Lógica y Estado para el Dictado por Voz
 // =========================================================
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const SpeechRecognition = globalThis.SpeechRecognition || globalThis.webkitSpeechRecognition;
 
 const steps = [
   "Datos de la Consulta",
@@ -15,7 +15,8 @@ export default function StudentAttendance() {
   const { user } = useAuth(); // user.id es el id_usuario
 
   const [step, setStep] = useState(0);
-  const [isListening, setIsListening] = useState(false); // 🎙️ Estado de escucha
+  const [isListeningDiagnostic, setIsListeningDiagnostic] = useState(false); // 🎙️ Estado de escucha para diagnóstico
+  const [isListeningLearning, setIsListeningLearning] = useState(false); // 🎙️ Estado de escucha para aprendizaje
   const [form, setForm] = useState({
     fecha_atencion: "",
     nro_sesion: "",
@@ -55,17 +56,17 @@ export default function StudentAttendance() {
     if (step > 0) setStep(step - 1);
   };
 
-  // 🎙️ Función para manejar el dictado por voz
-  const handleVoiceInput = () => {
+  // 🎙️ Función genérica para manejar el dictado por voz
+  const handleVoiceInput = (fieldName, isCurrentlyListening, setListeningState) => {
     if (!SpeechRecognition) {
       alert("Tu navegador no soporta el dictado por voz. Por favor, utiliza la escritura manual.");
       return;
     }
 
-    if (isListening) {
-        // Detener si ya está escuchando (por si acaso)
-        // Se puede añadir un control de reconocimiento aquí si lo necesitas
-        return; 
+    if (isCurrentlyListening) {
+        // Detener si ya está escuchando
+        setListeningState(false);
+        return;
     }
 
     const recognition = new SpeechRecognition();
@@ -74,25 +75,25 @@ export default function StudentAttendance() {
     recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
-      setIsListening(true);
+      setListeningState(true);
     };
 
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
-      
-      // Añadir el texto dictado al campo existente, con un espacio si ya hay contenido
-      setForm((prev) => ({ 
-        ...prev, 
-        aprendizaje_obtenido: prev.aprendizaje_obtenido + (prev.aprendizaje_obtenido ? " " : "") + transcript
+
+      // Añadir el texto dictado al campo correspondiente, con un espacio si ya hay contenido
+      setForm((prev) => ({
+        ...prev,
+        [fieldName]: prev[fieldName] + (prev[fieldName] ? " " : "") + transcript
       }));
     };
 
     recognition.onend = () => {
-      setIsListening(false);
+      setListeningState(false);
     };
 
     recognition.onerror = (event) => {
-      setIsListening(false);
+      setListeningState(false);
       console.error('Speech recognition error:', event.error);
       if (event.error === 'not-allowed') {
           alert("Acceso al micrófono denegado. Por favor, permite el acceso en la configuración de tu navegador.");
@@ -115,7 +116,7 @@ export default function StudentAttendance() {
       const payload = {
         id_usuario: user.id, // Usa el id del usuario autenticado
         fecha_atencion: form.fecha_atencion,
-        nro_sesion: parseInt(form.nro_sesion),
+        nro_sesion: Number.parseInt(form.nro_sesion),
         modalidad_atencion: form.modalidad_atencion,
         motivo_atencion: form.motivo_atencion.join(", "),
         detalle_problema_actual: form.detalle_problema_actual,
@@ -149,7 +150,7 @@ export default function StudentAttendance() {
       } else {
         alert(result.detail || "Error al registrar asistencia");
       }
-    } catch (err) {
+    } catch {
       alert("Error al conectar con el servidor");
     }
   };
@@ -293,7 +294,48 @@ export default function StudentAttendance() {
                 <label><input type="radio" name="acude_profesional_particular" value="SI" checked={form.acude_profesional_particular === true} onChange={handleChange} style={radioStyle} />Sí</label>{" "}
                 <label><input type="radio" name="acude_profesional_particular" value="NO" checked={form.acude_profesional_particular === false} onChange={handleChange} style={radioStyle} />No</label>
               </div>
-              <input name="diagnostico_particular" placeholder="Si su respuesta fue sí, ¿cuál fue su diagnóstico?" value={form.diagnostico_particular} onChange={handleChange} style={inputStyle} />
+              {/* 🎙️ CONTENEDOR DE DICTADO POR VOZ PARA DIAGNÓSTICO */}
+              <div style={{ position: 'relative', marginBottom: '0.7rem' }}>
+                  <input
+                      name="diagnostico_particular"
+                      placeholder="Si su respuesta fue sí, ¿cuál fue su diagnóstico?"
+                      value={form.diagnostico_particular}
+                      onChange={handleChange}
+                      style={{ ...inputStyle, paddingRight: "3rem" }} // Deja espacio para el botón
+                  />
+                  <button
+                      type="button"
+                      onClick={() => handleVoiceInput('diagnostico_particular', isListeningDiagnostic, setIsListeningDiagnostic)}
+                      disabled={!SpeechRecognition}
+                      title={!SpeechRecognition ? "Dictado no soportado" : (isListeningDiagnostic ? "Pausar dictado" : "Dictar por voz")}
+                      style={{
+                          position: 'absolute',
+                          right: '10px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: !SpeechRecognition ? 'default' : 'pointer',
+                          padding: '0.3rem',
+                          borderRadius: '50%',
+                          color: isListeningDiagnostic ? '#EF4444' : 'var(--color-primary)',
+                          opacity: !SpeechRecognition ? 0.5 : 1, // Opacidad si no está soportado
+                          transition: 'color 0.2s, background 0.2s',
+                      }}>
+                      {isListeningDiagnostic ? (
+                          // Icono de pausa
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                          </svg>
+                      ) : (
+                          // Icono de micrófono
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zm0 14c-2.76 0-5.32-2.02-5.32-5h-2.08c0 3.99 3.23 7.35 7.4 8v3H12a1 1 0 0 0 0 2h4a1 1 0 0 0 0-2h-1.57v-3c4.17-.65 7.4-4 7.4-8h-2.08c0 2.98-2.56 5-5.32 5z"/>
+                          </svg>
+                      )}
+                  </button>
+              </div>
+              {/* FIN CONTENEDOR DE DICTADO POR VOZ PARA DIAGNÓSTICO */}
               <div style={{ marginBottom: "0.7rem" }}>
                 <label style={{ fontWeight: 500 }}>Actualmente qué tipo de tratamiento está llevando</label><br />
                 <label><input type="radio" name="tipo_tratamiento_actual" value="PSICOLÓGICO" checked={form.tipo_tratamiento_actual === "PSICOLÓGICO"} onChange={handleChange} style={radioStyle} />Psicológico</label>{" "}
@@ -317,29 +359,35 @@ export default function StudentAttendance() {
                       onChange={handleChange} 
                       style={{ ...inputStyle, minHeight: "70px", paddingRight: "3rem" }} // Deja espacio
                   />
-                  <button 
-                      type="button" 
-                      onClick={handleVoiceInput} 
-                      disabled={!SpeechRecognition || isListening}
-                      title={!SpeechRecognition ? "Dictado no soportado" : (isListening ? "Escuchando..." : "Dictar por voz")}
+                  <button
+                      type="button"
+                      onClick={() => handleVoiceInput('aprendizaje_obtenido', isListeningLearning, setIsListeningLearning)}
+                      disabled={!SpeechRecognition}
+                      title={!SpeechRecognition ? "Dictado no soportado" : (isListeningLearning ? "Pausar dictado" : "Dictar por voz")}
                       style={{
                           position: 'absolute',
                           right: '10px',
                           top: '10px',
                           background: 'none',
                           border: 'none',
-                          cursor: !SpeechRecognition || isListening ? 'default' : 'pointer',
+                          cursor: !SpeechRecognition ? 'default' : 'pointer',
                           padding: '0.3rem',
                           borderRadius: '50%',
-                          color: isListening ? '#EC4899' : 'var(--color-primary)', 
+                          color: isListeningLearning ? '#EF4444' : 'var(--color-primary)',
                           opacity: !SpeechRecognition ? 0.5 : 1, // Opacidad si no está soportado
                           transition: 'color 0.2s, background 0.2s',
-                          // Usamos un SVG simple para un icono más limpio
-                          // Esto se puede reemplazar por un icono de librería si la tienes
                       }}>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zm0 14c-2.76 0-5.32-2.02-5.32-5h-2.08c0 3.99 3.23 7.35 7.4 8v3H12a1 1 0 0 0 0 2h4a1 1 0 0 0 0-2h-1.57v-3c4.17-.65 7.4-4 7.4-8h-2.08c0 2.98-2.56 5-5.32 5z"/>
-                      </svg>
+                      {isListeningLearning ? (
+                          // Icono de pausa
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                          </svg>
+                      ) : (
+                          // Icono de micrófono
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zm0 14c-2.76 0-5.32-2.02-5.32-5h-2.08c0 3.99 3.23 7.35 7.4 8v3H12a1 1 0 0 0 0 2h4a1 1 0 0 0 0-2h-1.57v-3c4.17-.65 7.4-4 7.4-8h-2.08c0 2.98-2.56 5-5.32 5z"/>
+                          </svg>
+                      )}
                   </button>
               </div>
               {/* FIN CONTENEDOR DE DICTADO POR VOZ */}
