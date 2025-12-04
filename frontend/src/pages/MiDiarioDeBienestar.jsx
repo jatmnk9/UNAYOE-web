@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 
+// 🎙️ Configuración de reconocimiento de voz
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
 export default function MiDiarioDeBienestar() {
   const { user } = useAuth();
   const [note, setNote] = useState("");
@@ -11,6 +14,7 @@ export default function MiDiarioDeBienestar() {
   const [notesLoading, setNotesLoading] = useState(false);
   const [accompanimentText, setAccompanimentText] = useState(null);
   const [showAccompaniment, setShowAccompaniment] = useState(false);
+  const [isListening, setIsListening] = useState(false); // 🎙️ Estado de escucha
   
 
   // --- Lógica de Backend (REAL) ---
@@ -41,6 +45,52 @@ export default function MiDiarioDeBienestar() {
       fetchNotes(user.id);
     }
   }, [user]);
+
+  // 🎙️ Función para manejar el dictado por voz
+  const handleVoiceInput = () => {
+    if (!SpeechRecognition) {
+      alert("Tu navegador no soporta el dictado por voz. Por favor, utiliza la escritura manual.");
+      return;
+    }
+
+    if (isListening) {
+      // Detener si ya está escuchando (por si acaso)
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'es-ES'; // Configurar el idioma a español
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      
+      // Añadir el texto dictado al campo existente, con un espacio si ya hay contenido
+      setNote((prev) => prev + (prev ? " " : "") + transcript);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event) => {
+      setIsListening(false);
+      console.error('Speech recognition error:', event.error);
+      if (event.error === 'not-allowed') {
+        alert("Acceso al micrófono denegado. Por favor, permite el acceso en la configuración de tu navegador.");
+      } else if (event.error !== 'no-speech') {
+        // No alertar si solo fue que no se detectó habla (se maneja mejor con onend)
+        alert(`Error de dictado: ${event.error}.`);
+      }
+    };
+
+    recognition.start();
+  };
 
   const handleAddNote = async () => {
     if (!note.trim() || !user) {
@@ -212,6 +262,14 @@ export default function MiDiarioDeBienestar() {
           color: #555; font-size: 1rem; margin-bottom: 1.5rem;
         }
         
+        .diary-textarea-container {
+          position: relative;
+          width: 100%;
+          flex-grow: 1;
+          display: flex;
+          flex-direction: column;
+        }
+
         .diary-textarea {
           width: 100%; flex-grow: 1; min-height: 200px;
           border: 1.5px solid #d1c7b8; background-color: transparent;
@@ -219,10 +277,47 @@ export default function MiDiarioDeBienestar() {
           background-image: linear-gradient(#e0dcd1 1px, transparent 1px);
           background-size: 100% 1.8em;
           line-height: 1.8em;
-          padding: 0.5rem 1rem;
+          padding: 0.5rem 3rem 0.5rem 1rem; /* Espacio para el botón de micrófono */
         }
         
         .diary-textarea:focus { outline: none; border-color: #a08c72; }
+
+        .voice-input-button {
+          position: absolute;
+          right: 10px;
+          top: 10px;
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 0.3rem;
+          border-radius: 50%;
+          color: var(--color-primary, #34495e);
+          opacity: 1;
+          transition: color 0.2s, background 0.2s, transform 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .voice-input-button:hover:not(:disabled) {
+          background: rgba(52, 73, 94, 0.1);
+          transform: scale(1.1);
+        }
+
+        .voice-input-button:disabled {
+          cursor: default;
+          opacity: 0.5;
+        }
+
+        .voice-input-button.listening {
+          color: #EC4899;
+          animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.6; }
+        }
         
 
         .actions-toolbar { display: flex; gap: 1rem; margin-top: 1rem; }
@@ -267,13 +362,28 @@ export default function MiDiarioDeBienestar() {
               <p>Un espacio para ti. Escribe cómo te sientes, reflexiona y observa tu camino.</p>
             </div>
             
-            <textarea
-              className="diary-textarea"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Querido diario..."
-              disabled={loading || notesLoading}
-            />
+            {/* 🎙️ CONTENEDOR DE DICTADO POR VOZ */}
+            <div className="diary-textarea-container">
+              <textarea
+                className="diary-textarea"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Querido diario..."
+                disabled={loading || notesLoading}
+              />
+              <button
+                type="button"
+                onClick={handleVoiceInput}
+                disabled={!SpeechRecognition || isListening || loading || notesLoading}
+                title={!SpeechRecognition ? "Dictado no soportado" : (isListening ? "Escuchando..." : "Dictar por voz")}
+                className={`voice-input-button ${isListening ? 'listening' : ''}`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zm0 14c-2.76 0-5.32-2.02-5.32-5h-2.08c0 3.99 3.23 7.35 7.4 8v3H12a1 1 0 0 0 0 2h4a1 1 0 0 0 0-2h-1.57v-3c4.17-.65 7.4-4 7.4-8h-2.08c0 2.98-2.56 5-5.32 5z"/>
+                </svg>
+              </button>
+            </div>
+            {/* FIN CONTENEDOR DE DICTADO POR VOZ */}
             <div className="actions-toolbar">
                
               <button

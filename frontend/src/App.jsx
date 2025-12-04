@@ -20,6 +20,8 @@ import FaceVerify from "./pages/FaceVerify";
 import StudentAttendance from "./pages/StudentAttendance";
 import SeguimientoCitas from "./pages/SeguimientoCitas";
 import StudentAttendanceReport from "./pages/StudentAttendanceReport";
+import StudentGallery from "./pages/StudentGallery";
+import PsychologistDrawingsView from "./pages/PsychologistDrawingsView";
 
 // ✅ RUTA PRIVADA integrada
 function PrivateRoute({ children, role }) {
@@ -115,7 +117,7 @@ export default function App() {
         <Route path="diario" element={<MiDiarioDeBienestar />} />
         <Route path="recomendaciones" element={<Recomendaciones />} />
         <Route path="favoritos" element={<MisFavoritos />} />
-
+        <Route path="gallery" element={<StudentGallery />} />
         <Route path="asistencia" element={<StudentAttendance />} />
       </Route>
 
@@ -133,7 +135,7 @@ export default function App() {
         <Route index element={<PsychologistDashboard />} />
         <Route path="seguimiento" element={<SeguimientoDiario />} />
         <Route path="seguimiento/:studentId" element={<StudentReport />} />
-
+        <Route path="drawings" element={<PsychologistDrawingsView />} />
         <Route path="seguimiento-citas" element={<SeguimientoCitas />} />
         <Route path="seguimiento-citas/:studentId" element={<StudentAttendanceReport />} />
       </Route>

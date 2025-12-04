@@ -42,6 +42,7 @@ from app.services.email_service import EmailService
 from app.services.gemini_service import GeminiService
 from app.services.face_recognition_service import FaceRecognitionService
 from app.services.visualization_service import VisualizationService
+from app.services.drawing_analysis_service import DrawingAnalysisService
 
 # Recomendaciones
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -706,4 +707,196 @@ async def face_verify(payload: FaceVerifyRequest):
     except Exception as e:
         print(f"Error en verificación de rostro: {e}")
         raise HTTPException(status_code=500, detail="Error interno en verificación de rostro")
+
+# =========================================================
+# 🎨 Endpoints para Dibujos (Gallery)
+# =========================================================
+
+@app.post("/drawings/upload")
+async def upload_drawing(payload: dict):
+    """
+    Sube un dibujo del estudiante a Supabase Storage y guarda el registro en la tabla.
+    Payload: {
+        "user_id": "uuid",
+        "titulo": "string (opcional)",
+        "descripcion": "string (opcional)",
+        "image_base64": "string",
+        "drawing_data": {} (opcional, para canvas drawings),
+        "tipo_dibujo": "uploaded" | "canvas"
+    }
+    """
+    try:
+        user_id = payload.get("user_id")
+        if not user_id:
+            raise HTTPException(status_code=400, detail="user_id es requerido")
+        
+        # Verificar que el usuario existe
+        u_res = supabase.table("usuarios").select("id").eq("id", user_id).single().execute()
+        if not u_res.data:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        
+        image_base64 = payload.get("image_base64")
+        if not image_base64:
+            raise HTTPException(status_code=400, detail="image_base64 es requerido")
+        
+        # Decodificar imagen
+        img = DrawingAnalysisService.decode_base64_image(image_base64)
+        if img is None:
+            raise HTTPException(status_code=400, detail="No se pudo decodificar la imagen")
+        
+        # Convertir a bytes para subir
+        import base64
+        if ',' in image_base64:
+            image_base64 = image_base64.split(',')[1]
+        image_bytes = base64.b64decode(image_base64)
+        
+        # Generar nombre de archivo único
+        import uuid
+        drawing_id = str(uuid.uuid4())
+        file_extension = "png" if payload.get("tipo_dibujo") == "canvas" else "jpg"
+        filename = f"{user_id}/{drawing_id}.{file_extension}"
+        
+        # Subir a Supabase Storage
+        upload_res = supabase.storage.from_("student_drawings").upload(
+            filename,
+            image_bytes,
+            {"content-type": f"image/{file_extension}", "upsert": "false"}
+        )
+        
+        if getattr(upload_res, 'error', None):
+            raise HTTPException(status_code=500, detail=f"Error al subir imagen: {upload_res.error}")
+        
+        # Obtener URL pública
+        imagen_url = supabase.storage.from_("student_drawings").get_public_url(filename)
+        if not imagen_url:
+            raise HTTPException(status_code=500, detail="No se obtuvo URL pública de la imagen")
+        
+        # Guardar registro en la tabla
+        drawing_record = {
+            "usuario_id": user_id,
+            "titulo": payload.get("titulo", ""),
+            "descripcion": payload.get("descripcion", ""),
+            "imagen_url": imagen_url,
+            "drawing_data": payload.get("drawing_data"),
+            "tipo_dibujo": payload.get("tipo_dibujo", "uploaded")
+        }
+        
+        insert_res = supabase.table("drawings").insert(drawing_record).execute()
+        
+        return {
+            "message": "Dibujo subido con éxito",
+            "data": insert_res.data[0] if insert_res.data else drawing_record
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error al subir dibujo: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error interno al subir dibujo: {e}")
+
+@app.get("/drawings/student/{user_id}")
+async def get_student_drawings(user_id: str):
+    """Obtiene todos los dibujos de un estudiante."""
+    try:
+        response = supabase.table("drawings")\
+            .select("*")\
+            .eq("usuario_id", user_id)\
+            .order("created_at", desc=True)\
+            .execute()
+        
+        return {
+            "message": "Dibujos recuperados con éxito",
+            "data": response.data or []
+        }
+    except Exception as e:
+        print(f"Error al recuperar dibujos: {e}")
+        raise HTTPException(status_code=500, detail=f"Error interno al buscar dibujos: {e}")
+
+@app.get("/drawings/psychologist/{psychologist_id}")
+async def get_psychologist_students_drawings(psychologist_id: str):
+    """
+    Obtiene todos los dibujos de los estudiantes asignados a un psicólogo.
+    Incluye información del estudiante.
+    """
+    try:
+        # Primero obtener los estudiantes del psicólogo
+        students_res = supabase.table("usuarios")\
+            .select("id, nombre, apellido, codigo_alumno")\
+            .eq("rol", "estudiante")\
+            .eq("psicologo_id", psychologist_id)\
+            .execute()
+        
+        student_ids = [s["id"] for s in (students_res.data or [])]
+        
+        if not student_ids:
+            return {
+                "message": "No se encontraron estudiantes asignados",
+                "data": []
+            }
+        
+        # Obtener dibujos de esos estudiantes
+        drawings_res = supabase.table("drawings")\
+            .select("*, usuarios:usuario_id(id, nombre, apellido, codigo_alumno)")\
+            .in_("usuario_id", student_ids)\
+            .order("created_at", desc=True)\
+            .execute()
+        
+        return {
+            "message": "Dibujos recuperados con éxito",
+            "data": drawings_res.data or []
+        }
+    except Exception as e:
+        print(f"Error al recuperar dibujos del psicólogo: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error interno al buscar dibujos: {e}")
+
+@app.post("/drawings/analyze/{drawing_id}")
+async def analyze_drawing(drawing_id: str):
+    """
+    Analiza un dibujo existente y devuelve métricas, visualizaciones e insights de IA.
+    Descarga la imagen desde Supabase Storage, la analiza y devuelve los resultados.
+    """
+    try:
+        # Obtener el registro del dibujo
+        drawing_res = supabase.table("drawings")\
+            .select("id, imagen_url, usuario_id")\
+            .eq("id", drawing_id)\
+            .single()\
+            .execute()
+        
+        if not drawing_res.data:
+            raise HTTPException(status_code=404, detail="Dibujo no encontrado")
+        
+        drawing = drawing_res.data
+        imagen_url = drawing.get("imagen_url")
+        
+        if not imagen_url:
+            raise HTTPException(status_code=400, detail="El dibujo no tiene URL de imagen")
+        
+        # Descargar la imagen desde la URL
+        import requests
+        img_response = requests.get(imagen_url, timeout=10)
+        img_response.raise_for_status()
+        
+        # Convertir a base64 para el servicio de análisis
+        import base64
+        image_base64 = base64.b64encode(img_response.content).decode('utf-8')
+        
+        # Analizar el dibujo
+        analysis_result = DrawingAnalysisService.analyze_drawing(image_base64)
+        
+        if "error" in analysis_result:
+            raise HTTPException(status_code=500, detail=analysis_result["error"])
+        
+        return {
+            "message": "Análisis completado con éxito",
+            "drawing_id": drawing_id,
+            "analysis": analysis_result
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error al analizar dibujo: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error interno al analizar dibujo: {e}")
 
