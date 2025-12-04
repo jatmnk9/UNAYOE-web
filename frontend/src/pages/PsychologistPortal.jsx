@@ -2,7 +2,7 @@
 
 import { useAuth } from "../context/AuthContext";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Home as HomeIcon, NotebookPen, LogOut } from 'lucide-react';
+import { Home as HomeIcon, NotebookPen, LogOut, Palette } from 'lucide-react';
 
 export default function PsychologistPortal() {
     const { user, logout } = useAuth();
@@ -70,6 +70,12 @@ export default function PsychologistPortal() {
                             className={getNavLinkClass(`${baseUrl}/seguimiento-citas`)}
                         >
                             <NotebookPen className="sidebar-nav-icon" />Seguimiento de Citas
+                        </Link>
+                        <Link
+                            to={`${baseUrl}/drawings`}
+                            className={getNavLinkClass(`${baseUrl}/drawings`)}
+                        >
+                            <Palette className="sidebar-nav-icon" />Dibujos de Estudiantes
                         </Link>
                     </nav>
                 </div>
