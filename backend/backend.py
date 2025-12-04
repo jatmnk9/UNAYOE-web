@@ -31,6 +31,10 @@ from email.message import EmailMessage
 import smtplib
 import ssl
 from datetime import datetime
+import numpy as np
+import base64 as b64
+import cv2
+import face_recognition
 try:
     from google.oauth2 import service_account
     from googleapiclient.discovery import build
@@ -108,6 +112,14 @@ class Note(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+class FaceRegisterRequest(BaseModel):
+    user_id: str
+    image_base64: str  # JPEG/PNG en base64 del rostro
+
+class FaceVerifyRequest(BaseModel):
+    user_id: str
+    frame_base64: str  # Frame capturado en login para verificación
 
 # Inicializa la aplicación FastAPI
 app = FastAPI(title="API de Análisis de Bienestar")
@@ -273,6 +285,13 @@ async def login_user(credentials: LoginRequest):
         user_profile = profile_response.data
 
         # 3️⃣ Retornar usuario + tokens
+        # Nueva lógica de flujo facial:
+        # - has_face_registered: True si ya existe encoding (entonces se debe verificar rostro antes de acceder)
+        # - Si False: el frontend redirige a /face-register para capturar por primera vez.
+        # Mantiene requires_face_verification para compatibilidad (mismo valor que has_face_registered).
+        # Nuevo criterio: se considera registro facial si existe foto_perfil_url
+        face_registered = bool(user_profile.get("foto_perfil_url"))
+        print(f"[LOGIN] user_id={user_id} foto_perfil_url={user_profile.get('foto_perfil_url')} face_registered={face_registered}")
         return JSONResponse({
             "message": "Inicio de sesión exitoso",
             "user": {
@@ -281,11 +300,15 @@ async def login_user(credentials: LoginRequest):
                 "rol": user_profile["rol"],
                 "nombre": user_profile.get("nombre", ""),
                 "access_token": auth_response.session.access_token,
-                "refresh_token": auth_response.session.refresh_token
+                "refresh_token": auth_response.session.refresh_token,
+                "foto_perfil_url": user_profile.get("foto_perfil_url"),
+                "has_face_registered": face_registered,
+                "requires_face_verification": face_registered,
             }
         })
 
     except Exception as e:
+        print(f"[LOGIN][ERROR] {e}")
         raise HTTPException(status_code=500, detail=str(e))
 # (Nota: la ruta /notas/{user_id} está definida más abajo; se eliminó esta definición duplicada
 # para evitar comportamiento inesperado y facilitar la depuración.)
@@ -1078,3 +1101,122 @@ def trigger_alert_if_keywords(user_id: str, note_text: str) -> None:
         print(f"Alerta enviada a {to_email} por palabras severas.")
     except Exception as e:
         print(f"Error al procesar/enviar alerta: {e}")
+
+# =========================================================
+# 📸 Registro de rostro (Face ID)
+# Requiere columnas añadidas en Supabase:
+#   ALTER TABLE public.usuarios ADD COLUMN foto_perfil_url text;
+#   ALTER TABLE public.usuarios ADD COLUMN face_encoding jsonb;
+#   ALTER TABLE public.usuarios ADD COLUMN face_registered_at timestamptz;
+# Si no puedes cambiar ahora la tabla, al menos 'face_encoding' y 'foto_perfil_url'.
+# =========================================================
+
+def _decode_base64_image(data_b64: str) -> np.ndarray:
+    try:
+        header_removed = data_b64.split(',',1)[-1]  # soporta data:image/jpeg;base64,
+        binary = b64.b64decode(header_removed)
+        np_arr = np.frombuffer(binary, dtype=np.uint8)
+        img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        return img
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Imagen base64 inválida: {e}")
+
+def _extract_face_encoding(img_bgr: np.ndarray) -> list:
+    # Convertir a RGB
+    rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+    boxes = face_recognition.face_locations(rgb)
+    if not boxes:
+        raise HTTPException(status_code=422, detail="No se detectó ningún rostro en la imagen proporcionada")
+    if len(boxes) > 1:
+        # Tomamos el primero por simplicidad, o se puede exigir solo uno
+        boxes = [boxes[0]]
+    encodings = face_recognition.face_encodings(rgb, boxes)
+    if not encodings:
+        raise HTTPException(status_code=422, detail="No se pudo extraer encoding del rostro")
+    return encodings[0].tolist()
+
+def _compare_face(stored: list, img_bgr: np.ndarray, tolerance: float = 0.5) -> bool:
+    rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+    boxes = face_recognition.face_locations(rgb)
+    if not boxes:
+        return False
+    encs = face_recognition.face_encodings(rgb, boxes)
+    if not encs:
+        return False
+    for enc in encs:
+        match = face_recognition.compare_faces([np.array(stored)], enc, tolerance=tolerance)[0]
+        if match:
+            return True
+    return False
+
+@app.post("/face/register")
+async def face_register(payload: FaceRegisterRequest):
+    """Registra la foto y encoding del rostro del usuario (post-onboarding)."""
+    try:
+        # Verificar existencia usuario
+        u_res = supabase.table("usuarios").select("id").eq("id", payload.user_id).single().execute()
+        if not u_res.data:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+        img = _decode_base64_image(payload.image_base64)
+        encoding = _extract_face_encoding(img)
+
+        # Guardar imagen en Storage (si está configurado) - fallback local NO recomendado en producción
+        foto_url = None
+        try:
+            # Supabase Storage bucket 'profile_photos' debe existir
+            filename = f"faces/{payload.user_id}.jpg"  # carpeta lógica para organización
+            success, buf = cv2.imencode('.jpg', img)
+            if not success:
+                raise HTTPException(status_code=500, detail="Error al codificar imagen JPEG")
+            # 🟢 ESTO ESTÁ BIEN (el cambio: pon comillas al true)
+            upload_res = supabase.storage.from_("profile_photos").upload(
+                filename,
+                buf.tobytes(),
+                {"content-type": "image/jpeg", "upsert": "true"} 
+            )
+            if getattr(upload_res, 'error', None):
+                raise HTTPException(status_code=500, detail=f"Fallo al subir imagen: {upload_res.error}")
+            foto_url = supabase.storage.from_("profile_photos").get_public_url(filename)
+            if not foto_url:
+                raise HTTPException(status_code=500, detail="No se obtuvo URL pública de la foto")
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"[FACE_REGISTER][STORAGE_ERROR] {e}")
+            raise HTTPException(status_code=500, detail="Error al subir imagen a Storage")
+
+        update_fields = {
+            "face_encoding": encoding,
+            "face_registered_at": datetime.utcnow().isoformat(),
+        }
+        if foto_url:
+            update_fields["foto_perfil_url"] = foto_url
+
+        supabase.table("usuarios").update(update_fields).eq("id", payload.user_id).execute()
+
+        return {"message": "Rostro registrado con éxito", "foto_perfil_url": foto_url, "encoding_len": len(encoding)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error en registro de rostro: {e}")
+        raise HTTPException(status_code=500, detail="Error interno al registrar el rostro")
+
+@app.post("/face/verify")
+async def face_verify(payload: FaceVerifyRequest):
+    """Verifica si el frame enviado coincide con el rostro almacenado."""
+    try:
+        u_res = supabase.table("usuarios").select("face_encoding").eq("id", payload.user_id).single().execute()
+        data = u_res.data
+        if not data or not data.get("face_encoding"):
+            raise HTTPException(status_code=404, detail="Usuario sin rostro registrado")
+        stored_enc = data.get("face_encoding")
+        img = _decode_base64_image(payload.frame_base64)
+        verified = _compare_face(stored_enc, img)
+        return {"verified": verified}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error en verificación de rostro: {e}")
+        raise HTTPException(status_code=500, detail="Error interno en verificación de rostro")
+
