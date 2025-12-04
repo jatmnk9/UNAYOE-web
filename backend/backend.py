@@ -13,13 +13,18 @@ import traceback
 from datetime import datetime
 import numpy as np
 import cv2
+import sys
+import os
 
-# =========================================================
-# 🏗️ NUEVA ARQUITECTURA MVC - Importaciones de módulos
-# =========================================================
+# Obtiene la ruta absoluta de la carpeta donde está backend.py
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Configuración
+# Agrega esa carpeta al "sys.path" para que Python pueda encontrar la carpeta 'app'
+sys.path.append(current_dir)
+
+# --- A partir de aquí van tus imports normales ---
 from app.config.settings import settings
+
 
 # Base de datos
 from app.db.supabase_client import supabase
