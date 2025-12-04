@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import DrawingReplay from "../components/DrawingReplay";
 
 export default function PsychologistDrawingsView() {
   const { user } = useAuth();
@@ -8,6 +9,8 @@ export default function PsychologistDrawingsView() {
   const [analyzingDrawingId, setAnalyzingDrawingId] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [selectedDrawing, setSelectedDrawing] = useState(null);
+  const [replayDrawing, setReplayDrawing] = useState(null);
+  const [expandedStudents, setExpandedStudents] = useState({});
 
   useEffect(() => {
     if (user?.id) {
@@ -74,6 +77,21 @@ export default function PsychologistDrawingsView() {
     return acc;
   }, {});
 
+  const toggleStudent = (studentId) => {
+    setExpandedStudents(prev => ({
+      ...prev,
+      [studentId]: !prev[studentId]
+    }));
+  };
+
+  const handleReplay = (drawing) => {
+    if (drawing.drawing_data && drawing.tipo_dibujo === "canvas") {
+      setReplayDrawing(drawing);
+    } else {
+      alert("Este dibujo no tiene datos de reproducción disponibles. Solo los dibujos creados en línea pueden reproducirse.");
+    }
+  };
+
   return (
     <div className="portal-main-content" style={{ padding: "2rem" }}>
       <h1 style={{ fontSize: "2rem", marginBottom: "2rem", color: "var(--color-primary)" }}>
@@ -86,89 +104,182 @@ export default function PsychologistDrawingsView() {
         <p style={{ color: "#6b7280" }}>No hay dibujos disponibles.</p>
       ) : (
         <div>
-          {Object.values(drawingsByStudent).map(({ student, drawings: studentDrawings }) => (
+          {/* Lista de estudiantes */}
+          <div style={{ marginBottom: "2rem" }}>
+            <h2 style={{ fontSize: "1.5rem", marginBottom: "1rem", color: "#1f2937" }}>
+              Lista de Estudiantes ({Object.keys(drawingsByStudent).length})
+            </h2>
             <div
-              key={student.id}
               style={{
-                marginBottom: "3rem",
-                background: "#fff",
-                padding: "1.5rem",
-                borderRadius: "1rem",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                gap: "1rem",
+                marginBottom: "2rem"
               }}
             >
-              <h2 style={{ fontSize: "1.5rem", marginBottom: "1rem", color: "#1f2937" }}>
-                {student.nombre} ({student.codigo})
-              </h2>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                  gap: "1.5rem"
-                }}
-              >
-                {studentDrawings.map((drawing) => (
-                  <div
-                    key={drawing.id}
-                    style={{
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "0.5rem",
-                      overflow: "hidden",
-                      background: "#fff"
-                    }}
-                  >
-                    <img
-                      src={drawing.imagen_url}
-                      alt={drawing.titulo || "Dibujo"}
-                      style={{
-                        width: "100%",
-                        height: "200px",
-                        objectFit: "contain",
-                        background: "#f9fafb"
-                      }}
-                    />
-                    <div style={{ padding: "1rem" }}>
-                      <h3 style={{ fontSize: "1rem", marginBottom: "0.5rem", fontWeight: 600 }}>
-                        {drawing.titulo || "Sin título"}
+              {Object.values(drawingsByStudent).map(({ student, drawings: studentDrawings }) => (
+                <div
+                  key={student.id}
+                  style={{
+                    background: "#fff",
+                    padding: "1.5rem",
+                    borderRadius: "0.75rem",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                    border: expandedStudents[student.id] ? "2px solid var(--color-primary)" : "1px solid #e5e7eb",
+                    cursor: "pointer",
+                    transition: "all 0.2s"
+                  }}
+                  onClick={() => toggleStudent(student.id)}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <h3 style={{ fontSize: "1.2rem", marginBottom: "0.5rem", color: "#1f2937", fontWeight: 600 }}>
+                        {student.nombre}
                       </h3>
-                      {drawing.descripcion && (
-                        <p style={{ fontSize: "0.9rem", color: "#6b7280", marginBottom: "0.5rem" }}>
-                          {drawing.descripcion}
-                        </p>
-                      )}
-                      <p style={{ fontSize: "0.8rem", color: "#9ca3af", marginBottom: "1rem" }}>
-                        {new Date(drawing.created_at).toLocaleDateString("es-ES", {
-                          dateStyle: "long"
-                        })}
+                      <p style={{ fontSize: "0.9rem", color: "#6b7280", marginBottom: "0.5rem" }}>
+                        Código: {student.codigo}
                       </p>
-                      <button
-                        onClick={() => handleAnalyze(drawing.id)}
-                        disabled={analyzingDrawingId === drawing.id}
-                        style={{
-                          width: "100%",
-                          padding: "0.7rem",
-                          borderRadius: "0.5rem",
-                          border: "none",
-                          background:
-                            analyzingDrawingId === drawing.id
-                              ? "#9ca3af"
-                              : "var(--color-primary)",
-                          color: "#fff",
-                          cursor:
-                            analyzingDrawingId === drawing.id ? "not-allowed" : "pointer",
-                          fontWeight: 600,
-                          fontSize: "0.9rem"
-                        }}
-                      >
-                        {analyzingDrawingId === drawing.id
-                          ? "Analizando..."
-                          : "🔍 Analizar Imagen"}
-                      </button>
+                      <p style={{ fontSize: "0.9rem", color: "var(--color-primary)", fontWeight: 600 }}>
+                        {studentDrawings.length} {studentDrawings.length === 1 ? "dibujo" : "dibujos"}
+                      </p>
+                    </div>
+                    <div style={{ fontSize: "1.5rem", color: "var(--color-primary)" }}>
+                      {expandedStudents[student.id] ? "▼" : "▶"}
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
+          </div>
+
+          {/* Dibujos de cada estudiante (expandidos) */}
+          {Object.values(drawingsByStudent).map(({ student, drawings: studentDrawings }) => (
+            expandedStudents[student.id] && (
+              <div
+                key={student.id}
+                style={{
+                  marginBottom: "3rem",
+                  background: "#fff",
+                  padding: "1.5rem",
+                  borderRadius: "1rem",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+                  <h2 style={{ fontSize: "1.5rem", color: "#1f2937" }}>
+                    Dibujos de {student.nombre} ({student.codigo})
+                  </h2>
+                  <button
+                    onClick={() => toggleStudent(student.id)}
+                    style={{
+                      padding: "0.5rem 1rem",
+                      borderRadius: "0.5rem",
+                      border: "1px solid #e5e7eb",
+                      background: "#f9fafb",
+                      color: "#6b7280",
+                      cursor: "pointer",
+                      fontWeight: 600,
+                      fontSize: "0.9rem"
+                    }}
+                  >
+                    Ocultar
+                  </button>
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                    gap: "1.5rem"
+                  }}
+                >
+                  {studentDrawings.map((drawing) => (
+                    <div
+                      key={drawing.id}
+                      style={{
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "0.5rem",
+                        overflow: "hidden",
+                        background: "#fff"
+                      }}
+                    >
+                      <img
+                        src={drawing.imagen_url}
+                        alt={drawing.titulo || "Dibujo"}
+                        style={{
+                          width: "100%",
+                          height: "200px",
+                          objectFit: "contain",
+                          background: "#f9fafb"
+                        }}
+                      />
+                      <div style={{ padding: "1rem" }}>
+                        <h3 style={{ fontSize: "1rem", marginBottom: "0.5rem", fontWeight: 600 }}>
+                          {drawing.titulo || "Sin título"}
+                        </h3>
+                        {drawing.descripcion && (
+                          <p style={{ fontSize: "0.9rem", color: "#6b7280", marginBottom: "0.5rem" }}>
+                            {drawing.descripcion}
+                          </p>
+                        )}
+                        <p style={{ fontSize: "0.8rem", color: "#9ca3af", marginBottom: "0.5rem" }}>
+                          {new Date(drawing.created_at).toLocaleDateString("es-ES", {
+                            dateStyle: "long"
+                          })}
+                        </p>
+                        {drawing.tipo_dibujo === "canvas" && drawing.drawing_data && (
+                          <p style={{ fontSize: "0.8rem", color: "#3b82f6", marginBottom: "0.5rem", fontWeight: 600 }}>
+                            ✏️ Dibujo digital (reproducible)
+                          </p>
+                        )}
+                        <div style={{ display: "flex", gap: "0.5rem", flexDirection: "column" }}>
+                          <button
+                            onClick={() => handleAnalyze(drawing.id)}
+                            disabled={analyzingDrawingId === drawing.id}
+                            style={{
+                              width: "100%",
+                              padding: "0.7rem",
+                              borderRadius: "0.5rem",
+                              border: "none",
+                              background:
+                                analyzingDrawingId === drawing.id
+                                  ? "#9ca3af"
+                                  : "var(--color-primary)",
+                              color: "#fff",
+                              cursor:
+                                analyzingDrawingId === drawing.id ? "not-allowed" : "pointer",
+                              fontWeight: 600,
+                              fontSize: "0.9rem"
+                            }}
+                          >
+                            {analyzingDrawingId === drawing.id
+                              ? "Analizando..."
+                              : "🔍 Analizar Imagen"}
+                          </button>
+                          {drawing.tipo_dibujo === "canvas" && drawing.drawing_data && (
+                            <button
+                              onClick={() => handleReplay(drawing)}
+                              style={{
+                                width: "100%",
+                                padding: "0.7rem",
+                                borderRadius: "0.5rem",
+                                border: "none",
+                                background: "#10b981",
+                                color: "#fff",
+                                cursor: "pointer",
+                                fontWeight: 600,
+                                fontSize: "0.9rem"
+                              }}
+                            >
+                              ▶️ Ver Reproducción
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
           ))}
         </div>
       )}
@@ -338,6 +449,15 @@ export default function PsychologistDrawingsView() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Modal de reproducción */}
+      {replayDrawing && replayDrawing.drawing_data && (
+        <DrawingReplay
+          drawingData={replayDrawing.drawing_data}
+          onClose={() => setReplayDrawing(null)}
+          title={`Reproducción: ${replayDrawing.titulo || "Dibujo"}`}
+        />
       )}
     </div>
   );

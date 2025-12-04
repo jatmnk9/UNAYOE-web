@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import CanvasDraw from "react-canvas-draw";
+import DrawingReplay from "../components/DrawingReplay";
 
 export default function StudentGallery() {
   const { user } = useAuth();
@@ -13,6 +14,7 @@ export default function StudentGallery() {
   const [titulo, setTitulo] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [hasDrawing, setHasDrawing] = useState(false);
+  const [replayDrawing, setReplayDrawing] = useState(null);
   
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -179,6 +181,14 @@ export default function StudentGallery() {
   const handleLoadCanvas = (data) => {
     if (canvasRef.current && data) {
       canvasRef.current.loadSaveData(data);
+    }
+  };
+
+  const handleReplay = (drawing) => {
+    if (drawing.drawing_data && drawing.tipo_dibujo === "canvas") {
+      setReplayDrawing(drawing);
+    } else {
+      alert("Este dibujo no tiene datos de reproducción disponibles. Solo los dibujos creados en línea pueden reproducirse.");
     }
   };
 
@@ -529,19 +539,46 @@ export default function StudentGallery() {
                     {drawing.descripcion}
                   </p>
                 )}
-                <p style={{ fontSize: "0.8rem", color: "#9ca3af" }}>
+                <p style={{ fontSize: "0.8rem", color: "#9ca3af", marginBottom: "0.5rem" }}>
                   {new Date(drawing.created_at).toLocaleDateString("es-ES")}
                 </p>
                 {drawing.tipo_dibujo === "canvas" && drawing.drawing_data && (
-                  <p style={{ fontSize: "0.8rem", color: "#3b82f6" }}>
-                    ✏️ Dibujo digital (reproducible)
-                  </p>
+                  <div style={{ marginTop: "0.5rem" }}>
+                    <p style={{ fontSize: "0.8rem", color: "#3b82f6", marginBottom: "0.5rem", fontWeight: 600 }}>
+                      ✏️ Dibujo digital (reproducible)
+                    </p>
+                    <button
+                      onClick={() => handleReplay(drawing)}
+                      style={{
+                        width: "100%",
+                        padding: "0.7rem",
+                        borderRadius: "0.5rem",
+                        border: "none",
+                        background: "#10b981",
+                        color: "#fff",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                        fontSize: "0.9rem"
+                      }}
+                    >
+                      ▶️ Ver Reproducción
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Modal de reproducción */}
+      {replayDrawing && replayDrawing.drawing_data && (
+        <DrawingReplay
+          drawingData={replayDrawing.drawing_data}
+          onClose={() => setReplayDrawing(null)}
+          title={`Reproducción: ${replayDrawing.titulo || "Mi Dibujo"}`}
+        />
+      )}
     </div>
   );
 }
