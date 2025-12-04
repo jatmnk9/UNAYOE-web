@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function SeguimientoCitas() {
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+    const { user } = useAuth();
 
     const fetchStudents = async () => {
         try {
-            const res = await fetch('http://127.0.0.1:8000/psychologist/students');
+            // Filtrar estudiantes por el psicólogo vinculado
+            const pid = user?.id ? `?psychologist_id=${encodeURIComponent(user.id)}` : '';
+            const res = await fetch(`http://127.0.0.1:8000/psychologist/students${pid}`);
             if (!res.ok) {
                 throw new Error(`HTTP error! status: ${res.status}`);
             }
@@ -23,7 +27,8 @@ export default function SeguimientoCitas() {
 
     useEffect(() => {
         fetchStudents();
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.id]);
 
     // Cambia la ruta aquí:
     const handleViewReport = (studentId) => {
