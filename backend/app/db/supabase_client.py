@@ -19,18 +19,10 @@ class SupabaseClient:
             supabase_key = settings.SUPABASE_SERVICE_KEY or ""
             
             if not supabase_url or not supabase_key:
-                # Fallback: try to use old hardcoded values for migration period
-                import os
-                if not supabase_url:
-                    supabase_url = os.getenv("SUPABASE_URL", "https://xygadfvudziwnddcicbb.supabase.co")
-                if not supabase_key:
-                    supabase_key = os.getenv("SUPABASE_SERVICE_KEY", "")
-                
-                if not supabase_key:
-                    raise ValueError(
-                        "Supabase credentials not configured. "
-                        "Please set SUPABASE_URL and SUPABASE_SERVICE_KEY in .env file"
-                    )
+                raise ValueError(
+                    "Supabase credentials not configured. "
+                    "Please set SUPABASE_URL and SUPABASE_SERVICE_KEY in .env file"
+                )
             
             cls._instance = create_client(supabase_url, supabase_key)
         return cls._instance
