@@ -9,7 +9,9 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('[Login] Submit pressed email=', email);
     await login(email, password);
+    console.log('[Login] login() promise resolved');
   };
 
   return (

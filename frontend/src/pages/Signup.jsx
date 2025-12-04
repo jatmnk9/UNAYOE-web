@@ -121,9 +121,9 @@ export default function Signup() {
         throw new Error(errorDetail);
     }
 
-    // 3. Finalización
-    alert("Cuenta y perfil creados con éxito. ¡Bienvenido!");
-    navigate("/login");
+    // 3. Flujo simplificado: no se solicita rostro ahora
+    alert("Cuenta creada. Ahora inicia sesión.");
+    navigate("/login");
 
   } catch (err) {
       console.error("Error general en el registro:", err);

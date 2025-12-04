@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { AuthContext } from "./context/AuthContext";
 
 // 🔹 Páginas
@@ -15,7 +15,8 @@ import MiDiarioDeBienestar from "./pages/MiDiarioDeBienestar";
 import StudentDashboard from "./pages/StudentDashboard";
 import Recomendaciones from "./pages/Recomendaciones";
 import MisFavoritos from "./pages/MisFavoritos";
-
+import FaceRegister from "./pages/FaceRegister";
+import FaceVerify from "./pages/FaceVerify";
 import StudentAttendance from "./pages/StudentAttendance";
 import SeguimientoCitas from "./pages/SeguimientoCitas";
 import StudentAttendanceReport from "./pages/StudentAttendanceReport";
@@ -40,21 +41,35 @@ function PrivateRoute({ children, role }) {
 export default function App() {
   const { user } = useContext(AuthContext); 
 
+  useEffect(() => {
+    if (user) {
+      console.log('[App] Usuario cargado:', {
+        id: user.id,
+        foto_perfil_url: user.foto_perfil_url,
+        has_face_registered: user.has_face_registered
+      });
+    } else {
+      console.log('[App] Sin usuario en contexto');
+    }
+  }, [user]);
+
   return (
     <Routes>
       {/* Páginas públicas */}
       <Route path="/" element={<Home />} />
       
-      {/* CORRECCIÓN: Evita que usuarios logueados vean la página de Login */}
-      <Route 
-        path="/login" 
-        element={user ? (
-          user.rol === "estudiante" ? <Navigate to="/student" /> :
-          user.rol === "psicologo" ? <Navigate to="/psychologist" /> :
-          <Navigate to="/" />
-        ) : (
-          <Login />
-        )} 
+      {/* Flujo facial: si hay usuario redirige según foto_perfil_url */}
+      <Route
+        path="/login"
+        element={
+          user ? (
+            !user.foto_perfil_url
+              ? <Navigate to="/face-register" />
+              : <Navigate to="/face-verify" />
+          ) : (
+            <Login />
+          )
+        }
       />
       <Route
         path="/signup"
@@ -66,6 +81,22 @@ export default function App() {
           ) : (
             <Signup />
           )
+        }
+      />
+      <Route
+        path="/face-register"
+        element={
+          !user
+            ? <Navigate to="/login" />
+            : user.foto_perfil_url
+              ? <Navigate to="/face-verify" />
+              : <FaceRegister />
+        }
+      />
+      <Route
+        path="/face-verify"
+        element={
+          !user ? <Navigate to="/login" /> : <FaceVerify />
         }
       />
 

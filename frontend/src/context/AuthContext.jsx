@@ -12,6 +12,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      console.log('[Auth] Iniciando login...');
       const res = await fetch("http://127.0.0.1:8000/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -21,6 +22,7 @@ export const AuthProvider = ({ children }) => {
       if (!res.ok) throw new Error("Error en el inicio de sesión");
 
       const data = await res.json();
+      console.log('[Auth] Respuesta /login:', data);
 
       const userData = {
         id: data.user.id,
@@ -29,12 +31,27 @@ export const AuthProvider = ({ children }) => {
         nombre: data.user.nombre,
         access_token: data.user.access_token,
         refresh_token: data.user.refresh_token,
+        foto_perfil_url: data.user.foto_perfil_url || null,
+        has_face_registered: Boolean(data.user.foto_perfil_url),
       };
 
       setUser(userData);
       localStorage.setItem("user", JSON.stringify(userData));
+      console.log('[Auth] Usuario almacenado. has_face_registered=', userData.has_face_registered);
 
-      // Redirección por rol
+      // Nuevo flujo facial:
+      // Si NO tiene rostro registrado -> registrar
+      if (!userData.has_face_registered) {
+        console.log('[Auth] Sin foto -> redirigiendo a /face-register');
+        navigate("/face-register");
+        return;
+      }
+      // Si ya lo tiene -> verificar
+      console.log('[Auth] Con foto -> redirigiendo a /face-verify');
+      navigate("/face-verify");
+      return;
+
+      // Redirección por rol normal
       if (userData.rol === "estudiante") navigate("/student");
       else if (userData.rol === "psicologo") navigate("/psychologist");
       else navigate("/");
@@ -58,7 +75,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, setUser }}>
       {children}
     </AuthContext.Provider>
   );
