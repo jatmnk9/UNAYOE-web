@@ -78,19 +78,19 @@ export const LoginForm: React.FC = () => {
           id="email"
           name="email"
           type="email"
-          placeholder="correo@institucion.com"
+          placeholder="ejemplo@institucion.edu.co"
           value={formData.email}
           onChange={handleChange}
           required
           autoComplete="email"
-          className={`w-full px-4 py-3 rounded-lg border ${
+          className={`w-full px-4 py-3 text-sm rounded-lg border ${
             formErrors.email
-              ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
-              : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500/20'
-          } focus:ring-4 outline-none transition-all duration-200 bg-gray-50/50`}
+              ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30'
+              : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500/30'
+          } focus:ring-1 outline-none transition-all duration-200 bg-gray-50/50 placeholder:text-gray-400`}
         />
         {formErrors.email && (
-          <p className="text-sm text-red-600 mt-1">{formErrors.email}</p>
+          <p className="text-xs text-red-600 mt-1">{formErrors.email}</p>
         )}
       </div>
 
@@ -103,19 +103,19 @@ export const LoginForm: React.FC = () => {
           id="password"
           name="password"
           type="password"
-          placeholder="••••••••"
+          placeholder="Ingresa tu contraseña"
           value={formData.password}
           onChange={handleChange}
           required
           autoComplete="current-password"
-          className={`w-full px-4 py-3 rounded-lg border ${
+          className={`w-full px-4 py-3 text-sm rounded-lg border ${
             formErrors.password
-              ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
-              : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500/20'
-          } focus:ring-4 outline-none transition-all duration-200 bg-gray-50/50`}
+              ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30'
+              : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500/30'
+          } focus:ring-1 outline-none transition-all duration-200 bg-gray-50/50 placeholder:text-gray-400`}
         />
         {formErrors.password && (
-          <p className="text-sm text-red-600 mt-1">{formErrors.password}</p>
+          <p className="text-xs text-red-600 mt-1">{formErrors.password}</p>
         )}
       </div>
 
@@ -124,10 +124,12 @@ export const LoginForm: React.FC = () => {
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
-            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 cursor-pointer"
-            style={{ accentColor: 'var(--color-primary)' }}
+            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 cursor-pointer transition-all"
+            style={{ accentColor: '#3b82f6' }}
           />
-          <span className="text-sm text-gray-600">Recuérdame</span>
+          <span className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+            Recuérdame
+          </span>
         </label>
         <a
           href="#"
@@ -148,7 +150,7 @@ export const LoginForm: React.FC = () => {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full h-11 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold rounded-lg transition-all duration-200 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+        className="w-full h-11 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold rounded-lg transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isLoading ? (
           <span className="flex items-center justify-center gap-2">

@@ -100,7 +100,7 @@ export const routes: RouteObject[] = [
         element: <LoginPage />,
       },
       {
-        path: '/register',
+        path: '/signup',
         element: <SignupPage />,
       },
     ],

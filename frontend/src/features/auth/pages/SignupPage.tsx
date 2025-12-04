@@ -3,9 +3,9 @@ import { SignupForm } from '../components/SignupForm';
 
 export const SignupPage: React.FC = () => {
   return (
-    <main className="min-h-screen flex bg-gray-50">
+    <main className="min-h-screen flex flex-col md:flex-row bg-gray-50">
       {/* Columna izquierda - Imagen de fondo con branding */}
-      <div className="hidden md:flex md:w-1/2 relative overflow-hidden">
+      <div className="hidden md:flex md:w-1/2 relative overflow-hidden min-h-screen">
         {/* Imagen de fondo */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -40,7 +40,7 @@ export const SignupPage: React.FC = () => {
       </div>
 
       {/* Columna derecha - Formulario */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-4 sm:p-6 lg:p-12">
+      <div className="w-full md:w-1/2 flex items-center justify-center p-4 sm:p-6 lg:p-12 min-h-screen">
         <div className="w-full max-w-lg">
           {/* Header para móviles */}
           <div className="md:hidden text-center mb-8">
