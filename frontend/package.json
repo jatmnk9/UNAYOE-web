@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.21.0",
+    "@supabase/supabase-js": "^2.86.2",
     "@tailwindcss/cli": "^4.1.14",
     "axios": "^1.13.2",
     "dotenv": "^17.2.3",

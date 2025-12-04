@@ -29,4 +29,5 @@ class SupabaseClient:
 
 
 # Export singleton instance
+# Initialize the client (will use credentials from .env)
 supabase: Client = SupabaseClient.get_client()
