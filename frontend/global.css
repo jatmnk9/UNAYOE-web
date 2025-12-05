@@ -989,12 +989,17 @@ body, html {
   transition: all 0.3s ease-out;
   box-sizing: border-box !important;
   overflow: hidden;
+  max-height: 28rem;
+  height: 28rem;
 }
 
 /* Posiciones */
 .chatbot-window-container.bottom-24 {
   bottom: 6rem !important;
-  max-height: 28rem;
+  width: 24rem !important;
+  max-width: 24rem !important;
+  height: 28rem !important;
+  max-height: 28rem !important;
 }
 
 .chatbot-window-container.bottom-6 {
@@ -1045,6 +1050,7 @@ body, html {
 /* ÁREA DE MENSAJES */
 .chatbot-messages-container {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 1rem;
   display: flex;

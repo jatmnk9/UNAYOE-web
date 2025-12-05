@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { X, Minimize2, Maximize2 } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
@@ -8,8 +8,48 @@ export default function ChatbotWindow({ onClose }) {
   const [conversacion, setConversacion] = useState([]);
   const [minimizado, setMinimizado] = useState(false);
   const [cargando, setCargando] = useState(false);
+  const [pasoFormulario, setPasoFormulario] = useState(null);
+  const [datosFormulario, setDatosFormulario] = useState({
+    psicologo: null,
+    fecha: null,
+    hora: null,
+    razon: null
+  });
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+
+  // Cargar historial del localStorage al abrir
+  useEffect(() => {
+    if (user?.id) {
+      const historialGuardado = localStorage.getItem(`chatbot_${user.id}`);
+      if (historialGuardado) {
+        setConversacion(JSON.parse(historialGuardado));
+      }
+    }
+  }, [user?.id]);
+
+  // Guardar historial en localStorage cada vez que cambia
+  useEffect(() => {
+    if (user?.id && conversacion.length > 0) {
+      localStorage.setItem(`chatbot_${user.id}`, JSON.stringify(conversacion));
+    }
+  }, [conversacion, user?.id]);
+
+  // Placeholder dinámico según paso
+  const getPlaceholder = () => {
+    switch (pasoFormulario) {
+      case "pedir_psicologo":
+        return "¿Con qué psicólogo? (o 'cualquiera')";
+      case "pedir_fecha":
+        return "Fecha (ej: 2025-12-10)";
+      case "pedir_hora":
+        return "Hora (ej: 14:30)";
+      case "pedir_razon":
+        return "Razón de la cita...";
+      default:
+        return "Escribe aquí...";
+    }
+  };
 
   const enviarMensaje = async () => {
     if (!mensaje.trim()) return;
@@ -19,26 +59,103 @@ export default function ChatbotWindow({ onClose }) {
     setCargando(true);
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/chatbot`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          texto: mensaje,
-          user_id: user?.id
-        }),
-      });
+      // Si estamos en un paso de formulario, procesar diferente
+      if (pasoFormulario) {
+        // Guardar dato del paso actual
+        const datosActualizados = { ...datosFormulario };
+        
+        switch (pasoFormulario) {
+          case "pedir_psicologo":
+            datosActualizados.psicologo = mensaje;
+            break;
+          case "pedir_fecha":
+            datosActualizados.fecha = mensaje;
+            break;
+          case "pedir_hora":
+            datosActualizados.hora = mensaje;
+            break;
+          case "pedir_razon":
+            datosActualizados.razon = mensaje;
+            break;
+        }
+        setDatosFormulario(datosActualizados);
 
-      if (!res.ok) throw new Error("Error en la respuesta");
+        // Determinar siguiente paso
+        let siguientePaso = null;
+        let respuestaBot = "";
 
-      const data = await res.json();
-      setConversacion((prev) => [
-        ...prev,
-        { 
-          tipo: "bot", 
-          texto: data.respuesta || "No entendí tu pregunta", 
-          ruta: data.ruta || null 
-        },
-      ]);
+        if (pasoFormulario === "pedir_psicologo") {
+          siguientePaso = "pedir_fecha";
+          respuestaBot = `¡Bien! Con ${mensaje}. ¿Qué fecha prefieres para la cita? 📅`;
+        } else if (pasoFormulario === "pedir_fecha") {
+          siguientePaso = "pedir_hora";
+          respuestaBot = `Perfecto, ${mensaje}. ¿A qué hora? 🕐`;
+        } else if (pasoFormulario === "pedir_hora") {
+          siguientePaso = "pedir_razon";
+          respuestaBot = `Excelente, ${mensaje}. ¿Cuál es la razón de la cita?`;
+        } else if (pasoFormulario === "pedir_razon") {
+          // Formulario completo - enviar al backend
+          datosActualizados.razon = mensaje;
+          
+          const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/citas`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              titulo: datosActualizados.razon,
+              fecha_cita: datosActualizados.fecha,
+              id_usuario: user?.id,
+              hora_cita: datosActualizados.hora,
+              psicologo_preferido: datosActualizados.psicologo
+            })
+          });
+
+          if (res.ok) {
+            respuestaBot = "✅ ¡Cita agendada exitosamente! Te enviaremos un recordatorio. 🎉";
+            setPasoFormulario(null);
+            setDatosFormulario({ psicologo: null, fecha: null, hora: null, razon: null });
+          } else {
+            respuestaBot = "❌ Error al agendar la cita. Intenta nuevamente.";
+            setPasoFormulario(null);
+          }
+        }
+
+        setConversacion((prev) => [
+          ...prev,
+          { tipo: "bot", texto: respuestaBot }
+        ]);
+
+        if (siguientePaso) {
+          setPasoFormulario(siguientePaso);
+        }
+      } else {
+        // Flujo normal - enviar a n8n
+        const res = await fetch(`${import.meta.env.VITE_CHATBOT_URL}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            texto: mensaje,
+            user_id: user?.id
+          }),
+        });
+
+        if (!res.ok) throw new Error("Error en la respuesta");
+
+        const data = await res.json();
+        
+        setConversacion((prev) => [
+          ...prev,
+          { 
+            tipo: "bot", 
+            texto: data.respuesta || "No entendí tu pregunta", 
+            ruta: data.ruta || null 
+          },
+        ]);
+
+        // Si n8n responde con un paso de formulario, activarlo
+        if (data.paso) {
+          setPasoFormulario(data.paso);
+        }
+      }
     } catch (err) {
       console.error("Error al enviar mensaje:", err);
       setConversacion((prev) => [
@@ -142,7 +259,7 @@ export default function ChatbotWindow({ onClose }) {
             <div className="chatbot-input-container">
               <input
                 className="chatbot-input"
-                placeholder="Escribe aquí..."
+                placeholder={getPlaceholder()}
                 value={mensaje}
                 onChange={(e) => setMensaje(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !cargando && enviarMensaje()}

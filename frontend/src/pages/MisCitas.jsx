@@ -44,7 +44,7 @@ export default function MisCitas() {
 
   const cargarPsicologos = async () => {
     try {
-      const response = await fetch(`${API_URL}/citas/psicologos/disponibles`);
+      const response = await fetch(`http://127.0.0.1:8000/citas/psicologos/disponibles`);
       const data = await response.json();
 
       if (response.ok) {
