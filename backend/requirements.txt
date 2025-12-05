@@ -68,3 +68,6 @@ google-api-python-client>=2.108.0
 # DESARROLLO
 # =========================================================
 python-dotenv==1.0.1
+
+
+cryptography==45.0.0
