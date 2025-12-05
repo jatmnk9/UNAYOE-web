@@ -21,6 +21,17 @@ export default function PsychologistPortal() {
                 ? "sidebar-nav-button active"
                 : "sidebar-nav-button";
         }
+
+        // Para rutas con parámetros dinámicos, usar startsWith
+        // Ejemplo: /psychologist/seguimiento-citas/:studentId debe activar /psychologist/seguimiento-citas
+        if (path === `${baseUrl}/seguimiento` && currentPath.startsWith(`${baseUrl}/seguimiento/`)) {
+            return "sidebar-nav-button active";
+        }
+
+        if (path === `${baseUrl}/seguimiento-citas` && currentPath.startsWith(`${baseUrl}/seguimiento-citas/`)) {
+            return "sidebar-nav-button active";
+        }
+
         return currentPath === path
             ? "sidebar-nav-button active"
             : "sidebar-nav-button";

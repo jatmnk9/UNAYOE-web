@@ -39,7 +39,7 @@ export default function AppointmentsManagement() {
     const cargarCitas = async (listaPsicologos) => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_URL}/citas`);
+            const response = await fetch(`${API_URL}/citas/todas`);
             const data = await response.json();
 
             if (response.ok) {
