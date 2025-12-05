@@ -38,49 +38,48 @@ export default function SeguimientoCitas() {
     return (
         <div className="portal-main-content">
             <div
-                className="login-card"
                 style={{
                     width: "100%",
-                    maxWidth: "900px",
-                    margin: "2rem auto",
-                    padding: "2.5rem 2rem",
-                    borderRadius: "1.2rem",
-                    boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-                    background: "var(--color-soft-bg)",
-                    backdropFilter: "blur(2px)",
+                    maxWidth: "1000px",
+                    margin: "0 auto",
+                    padding: "2rem",
+                    borderRadius: "var(--radius-xl)",
+                    boxShadow: "var(--shadow-lg)",
+                    background: "var(--color-white)",
                 }}
             >
-                <h2
-                    className="login-title"
-                    style={{
-                        fontSize: "2.2rem",
-                        color: "var(--color-primary)",
-                        fontWeight: 700,
-                        marginBottom: "1.5rem",
-                        textAlign: "center",
-                        borderBottom: "2px solid var(--color-soft-bg)",
-                        paddingBottom: "0.7rem"
-                    }}
-                >
-                    Seguimiento de Citas
-                </h2>
-
-                <div style={{ marginBottom: "1.5rem", textAlign: "left" }}>
+                <div style={{ marginBottom: "2rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
+                    <h2
+                        style={{
+                            fontSize: "2rem",
+                            color: "var(--color-dark)",
+                            fontWeight: 700,
+                            margin: 0
+                        }}
+                    >
+                        Seguimiento de Citas
+                    </h2>
                     <button
                         onClick={() => navigate('/psychologist')}
                         style={{
                             padding: "0.6rem 1.2rem",
-                            background: "var(--color-soft-bg)",
+                            background: "var(--color-primary)",
                             color: "var(--color-dark)",
-                            borderRadius: "0.7rem",
+                            borderRadius: "var(--radius-md)",
                             border: "none",
                             fontWeight: 600,
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                             cursor: "pointer",
-                            transition: "background 0.2s",
+                            transition: "all 0.2s ease",
                         }}
-                        onMouseOver={e => e.target.style.background = "var(--color-primary)"}
-                        onMouseOut={e => e.target.style.background = "var(--color-soft-bg)"}
+                        onMouseOver={e => {
+                            e.target.style.background = "var(--color-accent)";
+                            e.target.style.transform = "translateY(-2px)";
+                        }}
+                        onMouseOut={e => {
+                            e.target.style.background = "var(--color-primary)";
+                            e.target.style.transform = "translateY(0)";
+                        }}
                     >
                         ← Volver al Portal
                     </button>
@@ -88,88 +87,113 @@ export default function SeguimientoCitas() {
 
                 {loading ? (
                     <div style={{
-                        background: "rgba(255,255,255,0.85)",
-                        padding: "2rem 2.5rem",
-                        borderRadius: "1.2rem",
-                        boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+                        background: "var(--color-soft-bg)",
+                        padding: "3rem 2rem",
+                        borderRadius: "var(--radius-md)",
                         fontWeight: 600,
                         color: "var(--color-primary)",
-                        fontSize: "1.2rem",
+                        fontSize: "1.125rem",
                         textAlign: "center"
                     }}>
                         Cargando lista de estudiantes...
                     </div>
                 ) : students.length === 0 ? (
-                    <p style={{ color: "var(--color-text-gray)", textAlign: "center", fontSize: "1.1rem" }}>
-                        No hay estudiantes asignados para citas.
-                    </p>
+                    <div style={{
+                        background: "var(--color-soft-bg)",
+                        padding: "3rem 2rem",
+                        borderRadius: "var(--radius-md)",
+                        textAlign: "center"
+                    }}>
+                        <p style={{ color: "var(--color-text-gray)", fontSize: "1rem", margin: 0 }}>
+                            No hay estudiantes asignados para citas.
+                        </p>
+                    </div>
                 ) : (
                     <div style={{
-                        boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
-                        borderRadius: "0.7rem",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                        borderRadius: "var(--radius-md)",
                         overflow: "hidden",
-                        background: "#fff"
+                        border: "1px solid #E5E7EB"
                     }}>
                         <table style={{ width: "100%", borderCollapse: "collapse" }}>
                             <thead style={{ background: "var(--color-soft-bg)" }}>
                                 <tr>
                                     <th style={{
-                                        padding: "1rem",
+                                        padding: "1rem 1.5rem",
                                         textAlign: "left",
-                                        fontSize: "1rem",
+                                        fontSize: "0.875rem",
                                         fontWeight: 700,
                                         color: "var(--color-dark)",
-                                        letterSpacing: "0.04em"
+                                        textTransform: "uppercase",
+                                        letterSpacing: "0.05em"
                                     }}>
                                         Nombre Completo
                                     </th>
                                     <th style={{
-                                        padding: "1rem",
+                                        padding: "1rem 1.5rem",
                                         textAlign: "left",
-                                        fontSize: "1rem",
+                                        fontSize: "0.875rem",
                                         fontWeight: 700,
                                         color: "var(--color-dark)",
-                                        letterSpacing: "0.04em"
+                                        textTransform: "uppercase",
+                                        letterSpacing: "0.05em"
                                     }}>
                                         Código
                                     </th>
-                                    <th style={{ padding: "1rem" }}></th>
+                                    <th style={{ padding: "1rem 1.5rem", textAlign: "right" }}></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {students.map((student) => (
-                                    <tr key={student.id} style={{ borderBottom: "1px solid #eee", transition: "background 0.2s" }}>
+                                    <tr
+                                        key={student.id}
+                                        style={{
+                                            borderBottom: "1px solid #E5E7EB",
+                                            transition: "background 0.2s ease"
+                                        }}
+                                        onMouseOver={e => e.currentTarget.style.background = "#F9FAFB"}
+                                        onMouseOut={e => e.currentTarget.style.background = "transparent"}
+                                    >
                                         <td style={{
-                                            padding: "1rem",
-                                            fontSize: "1rem",
+                                            padding: "1.25rem 1.5rem",
+                                            fontSize: "0.95rem",
                                             fontWeight: 500,
                                             color: "var(--color-dark)"
                                         }}>
                                             {student.nombre} {student.apellido}
                                         </td>
                                         <td style={{
-                                            padding: "1rem",
-                                            fontSize: "1rem",
+                                            padding: "1.25rem 1.5rem",
+                                            fontSize: "0.95rem",
                                             color: "var(--color-text-gray)"
                                         }}>
                                             {student.codigo_alumno}
                                         </td>
-                                        <td style={{ padding: "1rem", textAlign: "right" }}>
+                                        <td style={{ padding: "1.25rem 1.5rem", textAlign: "right" }}>
                                             <button
                                                 onClick={() => handleViewReport(student.id)}
                                                 style={{
-                                                    padding: "0.6rem 1.2rem",
+                                                    padding: "0.6rem 1.25rem",
                                                     background: "var(--color-primary)",
-                                                    color: "#fff",
-                                                    borderRadius: "0.7rem",
+                                                    color: "var(--color-dark)",
+                                                    borderRadius: "var(--radius-md)",
                                                     border: "none",
                                                     fontWeight: 600,
-                                                    boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+                                                    fontSize: "0.875rem",
+                                                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                                                     cursor: "pointer",
-                                                    transition: "background 0.2s",
+                                                    transition: "all 0.2s ease",
                                                 }}
-                                                onMouseOver={e => e.target.style.background = "var(--color-dark)"}
-                                                onMouseOut={e => e.target.style.background = "var(--color-primary)"}
+                                                onMouseOver={e => {
+                                                    e.target.style.background = "var(--color-accent)";
+                                                    e.target.style.transform = "translateY(-2px)";
+                                                    e.target.style.boxShadow = "0 4px 6px rgba(0,0,0,0.15)";
+                                                }}
+                                                onMouseOut={e => {
+                                                    e.target.style.background = "var(--color-primary)";
+                                                    e.target.style.transform = "translateY(0)";
+                                                    e.target.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+                                                }}
                                             >
                                                 Ver Reporte
                                             </button>
