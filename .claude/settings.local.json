@@ -23,7 +23,8 @@
       "Bash(npx tailwindcss:*)",
       "Bash(dir:*)",
       "Bash(npm run dev:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": []
