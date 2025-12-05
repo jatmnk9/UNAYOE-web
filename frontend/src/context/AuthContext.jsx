@@ -1,5 +1,6 @@
 import { createContext, useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from '../config/api';
 
 export const AuthContext = createContext();
 
@@ -13,7 +14,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       console.log('[Auth] Iniciando login...');
-      const res = await fetch("http://127.0.0.1:8000/login", {
+      const res = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

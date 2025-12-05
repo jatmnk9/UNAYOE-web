@@ -57,11 +57,14 @@ from sklearn.metrics.pairwise import cosine_similarity
 app = FastAPI(title="API de Análisis de Bienestar")
 
 # Configura CORS para permitir que el frontend se conecte
-# Usando configuración desde settings
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_origin_regex=".*",  # ✅ Permite cualquier origen local
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://unayoe-frontend.vercel.app",
+        *settings.CORS_ORIGINS,
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
