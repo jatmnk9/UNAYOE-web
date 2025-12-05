@@ -1,6 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import NavBar from '../components/NavBar';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import API_URL from '../config/api';
@@ -161,8 +160,6 @@ export default function MisCitas() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <NavBar />
-
       <div className="container mx-auto max-w-4xl p-6">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
