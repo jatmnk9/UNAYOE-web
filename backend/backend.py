@@ -219,6 +219,10 @@ async def guardar_nota(note_data: Note, background_tasks: BackgroundTasks):
         accompaniment_text = None
         try:
             accompaniment_text = GeminiService.generate_accompaniment(nota_texto)
+            if accompaniment_text:
+                print(f"[GUARDAR_NOTA] Acompañamiento generado exitosamente (length: {len(accompaniment_text)})")
+            else:
+                print(f"[GUARDAR_NOTA] Acompañamiento no se pudo generar (retornó None)")
         except Exception as e:
             print(f"Error generando acompañamiento con Gemini: {e}")
             traceback.print_exc()
