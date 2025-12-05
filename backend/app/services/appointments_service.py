@@ -3,6 +3,7 @@ Servicio de gestión de citas médicas/psicológicas.
 Maneja la lógica de negocio para operaciones CRUD de citas.
 """
 from typing import List, Dict, Any
+from urllib import response
 from fastapi import HTTPException
 from app.db.supabase_client import supabase
 from app.models.schemas import CitaCreate, CitaUpdate, CitaAsignarPsicologo
@@ -36,7 +37,10 @@ class AppointmentsService:
                 "titulo": cita_data.titulo,
                 "fecha_cita": cita_data.fecha_cita,
                 "id_usuario": id_usuario
-            }).execute()
+            }).select().execute()
+
+            print(f"Response: {response}")
+            print(f"Data: {response.data}")
 
             return response.data[0] if response.data else {}
 

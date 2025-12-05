@@ -27,7 +27,7 @@ export default function MisCitas() {
   const cargarCitas = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/citas/usuario/${user.id}`);
+      const response = await fetch(`http://127.0.0.1:8000/citas/usuario/${user.id}`);
       const data = await response.json();
 
       if (response.ok) {
