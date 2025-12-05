@@ -78,7 +78,7 @@ UNAYOE → Psicólogo: Muestra alertas, pacientes en riesgo
     ┌─────────────┐    ┌──────────────────┐    ┌─────────────┐
     │  Psicólogo  │───▶│     UNAYOE       │◀───│  Supabase   │
     └─────────────┘    │  Sistema Salud   │    │  (BaaS)     │
-         ▲             │     Mental       │    └─────────────┘
+         ▲             │     Mental       │          └─────────────┘
          │             └────────┬─────────┘
          │                      │
          │ Recibe alertas       │ Usa IA
