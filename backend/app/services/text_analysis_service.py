@@ -75,7 +75,50 @@ class TextAnalysisService:
         return " ".join(clean_tokens), clean_tokens
     
     @staticmethod
-    def analyze_diary_complete(diary_df: pd.DataFrame) -> Tuple[pd.DataFrame, List[Dict]]:
+    def analyze_diary_complete(diary_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Analyze diary entries and return analysis data
+
+        Args:
+            diary_df: DataFrame with 'note' column containing diary entries
+
+        Returns:
+            DataFrame with analysis results
+        """
+        analysis = []
+        all_texts = []
+
+        for note in diary_df['note']:
+            try:
+                processed_text, tokens = TextAnalysisService.preprocess_text(note)
+                sentiment_result = sentiment_classifier(note)[0]
+                emotion_result = emotion_classifier(note)[0]
+
+                analysis.append({
+                    'nota_original': note,
+                    'texto_procesado': processed_text,
+                    'tokens': tokens,
+                    'sentimiento': sentiment_result['label'],
+                    'emocion': emotion_result['label'],
+                    'emocion_score': emotion_result['score']
+                })
+                all_texts.append(note)
+            except Exception as e:
+                print(f"Error processing note: {e}")
+                analysis.append({
+                    'nota_original': note,
+                    'texto_procesado': '',
+                    'tokens': [],
+                    'sentimiento': 'ERROR',
+                    'emocion': 'ERROR',
+                    'emocion_score': 0.0
+                })
+                all_texts.append(note)
+
+        return pd.DataFrame(analysis)
+
+    @staticmethod
+    def analyze_diary_complete_with_topics(diary_df: pd.DataFrame) -> Tuple[pd.DataFrame, List[Dict]]:
         """
         Analyze diary entries and return analysis data with topics
 
@@ -124,7 +167,7 @@ class TextAnalysisService:
         df_analysis = TextAnalysisService.assign_topics_to_notes(df_analysis, global_topics)
 
         return df_analysis, global_topics
-    
+
     @staticmethod
     def analyze_single_note(note_text: str) -> dict:
         """
