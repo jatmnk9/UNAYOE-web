@@ -31,3 +31,8 @@ CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 # Environment
 ENVIRONMENT=development
 
+# Encryption Configuration
+# Genera una clave con: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+# O usa una contraseña segura (el servicio derivará una clave de 32 bytes)
+ENCRYPTION_KEY=tu_clave_de_encriptacion_segura_aqui
+

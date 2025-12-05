@@ -43,6 +43,9 @@ class Settings:
     # Environment
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     
+    # Encryption Configuration
+    ENCRYPTION_KEY: str = os.getenv("ENCRYPTION_KEY", "")
+    
     @classmethod
     def validate(cls) -> None:
         """Validate that required environment variables are set"""
