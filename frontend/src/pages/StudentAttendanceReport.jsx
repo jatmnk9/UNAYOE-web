@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config/api';
 import Chatbot from "../components/Chatbot";
 
 const initialAnalysis = {
@@ -25,7 +26,7 @@ export default function StudentAttendanceReport() {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch(`http://127.0.0.1:8000/analyze-asistencia/${studentId}`);
+            const res = await fetch(`${API_BASE_URL}/analyze-asistencia/${studentId}`);
             const result = await res.json();
 
             if (!res.ok) {
@@ -281,7 +282,7 @@ export default function StudentAttendanceReport() {
         setInsight("");
         try {
             const aprendizajes = notes.map(n => n.aprendizaje_obtenido).filter(Boolean);
-            const res = await fetch("http://127.0.0.1:8000/attendance-insight", {
+            const res = await fetch(`${API_BASE_URL}/attendance-insight`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ texts: aprendizajes })

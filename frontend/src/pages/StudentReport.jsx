@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config/api';
 
 const initialAnalysis = {
     sentiments: null,
@@ -19,7 +20,7 @@ export default function StudentReport() {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch(`http://127.0.0.1:8000/analyze/${studentId}`);
+            const res = await fetch(`${API_BASE_URL}/analyze/${studentId}`);
             const result = await res.json();
 
             if (!res.ok) {
@@ -36,7 +37,7 @@ export default function StudentReport() {
     };
 
     const handleExportCSV = () => {
-        window.open(`http://127.0.0.1:8000/export/${studentId}`, '_blank');
+        window.open(`${API_BASE_URL}/export/${studentId}`, '_blank');
     };
 
     useEffect(() => {

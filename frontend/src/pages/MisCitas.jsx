@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import API_URL from '../config/api';
+import { API_BASE_URL } from '../config/api';
 
 export default function MisCitas() {
     const { user } = useContext(AuthContext);
@@ -22,7 +22,7 @@ export default function MisCitas() {
 
     const cargarPsicologos = async () => {
         try {
-            const response = await fetch(`${API_URL}/citas/psicologos/disponibles`);
+            const response = await fetch(`${API_BASE_URL}/citas/psicologos/disponibles`);
             const data = await response.json();
 
             if (response.ok) {
@@ -40,7 +40,7 @@ export default function MisCitas() {
     const cargarCitas = async (listaPsicologos) => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_URL}/citas/usuario/${user.id}`);
+            const response = await fetch(`${API_BASE_URL}/citas/usuario/${user.id}`);
             const data = await response.json();
 
             if (response.ok) {
@@ -100,7 +100,7 @@ export default function MisCitas() {
         if (!validarFormulario()) return;
 
         try {
-            const response = await fetch(`${API_URL}/citas?id_usuario=${user.id}`, {
+            const response = await fetch(`${API_BASE_URL}/citas?id_usuario=${user.id}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -131,7 +131,7 @@ export default function MisCitas() {
         if (!window.confirm('¿Estás seguro de cancelar esta cita?')) return;
 
         try {
-            const response = await fetch(`${API_URL}/citas/${citaId}?id_usuario=${user.id}`, {
+            const response = await fetch(`${API_BASE_URL}/citas/${citaId}?id_usuario=${user.id}`, {
                 method: 'DELETE'
             });
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import { API_BASE_URL } from "../config/api";
 
 // 🎙️ Configuración de reconocimiento de voz
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -27,7 +28,7 @@ export default function MiDiarioDeBienestar() {
     try {
       setNotesLoading(true);
       // Asegúrate de que esta URL sea accesible desde tu entorno de desarrollo
-      const res = await fetch(`http://127.0.0.1:8000/notas/${userId}`);
+      const res = await fetch(`${API_BASE_URL}/notas/${userId}`);
       if (!res.ok) throw new Error(`Error al obtener notas: ${res.status}`);
   const result = await res.json();
   // Reiniciar la página a la primera cuando se cargan notas
@@ -100,7 +101,7 @@ export default function MiDiarioDeBienestar() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/notas", {
+      const res = await fetch(`${API_BASE_URL}/notas`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config/api';
 import DrawingReplay from "../components/DrawingReplay";
 
 export default function PsychologistDrawingsView() {
@@ -21,7 +22,7 @@ export default function PsychologistDrawingsView() {
   const fetchDrawings = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`http://127.0.0.1:8000/drawings/psychologist/${user.id}`);
+      const res = await fetch(`${API_BASE_URL}/drawings/psychologist/${user.id}`);
       const result = await res.json();
       if (res.ok) {
         setDrawings(result.data || []);
@@ -39,7 +40,7 @@ export default function PsychologistDrawingsView() {
       setAnalysisResult(null);
       setSelectedDrawing(drawings.find(d => d.id === drawingId));
 
-      const res = await fetch(`http://127.0.0.1:8000/drawings/analyze/${drawingId}`, {
+      const res = await fetch(`${API_BASE_URL}/drawings/analyze/${drawingId}`, {
         method: "POST"
       });
 

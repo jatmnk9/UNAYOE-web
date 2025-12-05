@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config/api';
 
 export default function SeguimientoCitas() {
     const [students, setStudents] = useState([]);
@@ -12,7 +13,7 @@ export default function SeguimientoCitas() {
         try {
             // Filtrar estudiantes por el psicólogo vinculado
             const pid = user?.id ? `?psychologist_id=${encodeURIComponent(user.id)}` : '';
-            const res = await fetch(`http://127.0.0.1:8000/psychologist/students${pid}`);
+            const res = await fetch(`${API_BASE_URL}/psychologist/students${pid}`);
             if (!res.ok) {
                 throw new Error(`HTTP error! status: ${res.status}`);
             }

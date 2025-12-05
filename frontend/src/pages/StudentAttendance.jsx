@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext"; // Igual que en MiDiarioDeBienestar
+import { API_BASE_URL } from "../config/api";
 
 // =========================================================
 // 🎙️ NUEVO: Lógica y Estado para el Dictado por Voz
@@ -126,7 +127,7 @@ export default function StudentAttendance() {
         comodidad_unayoe: form.comodidad_unayoe,
         aprendizaje_obtenido: form.aprendizaje_obtenido,
       };
-      const res = await fetch("http://127.0.0.1:8000/asistencia", {
+      const res = await fetch(`${API_BASE_URL}/asistencia`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

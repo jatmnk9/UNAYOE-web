@@ -1,5 +1,6 @@
 import { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
+import { API_BASE_URL } from "../config/api";
 import { Heart, Sparkles, X } from "lucide-react"; // Importamos 'X' para el botón de cerrar
 import "../styles/Recomendaciones.css";
 
@@ -72,7 +73,7 @@ export default function Recomendaciones() {
   useEffect(() => {
     const fetchTodas = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/recomendaciones/todas");
+        const res = await fetch(`${API_BASE_URL}/recomendaciones/todas`);
         const data = await res.json();
         setTodas(data.data || []);
       } catch (error) {
@@ -86,7 +87,7 @@ export default function Recomendaciones() {
   useEffect(() => {
     const fetchLikes = async () => {
       if (!user?.id) return;
-      const res = await fetch(`http://127.0.0.1:8000/likes/${user.id}`);
+      const res = await fetch(`${API_BASE_URL}/likes/${user.id}`);
       const data = await res.json();
       setLikes(data);
     };
@@ -98,7 +99,7 @@ export default function Recomendaciones() {
     if (!user?.id) return;
     setLoading(true);
     try {
-      const res = await fetch(`http://127.0.0.1:8000/recomendaciones/${user.id}`);
+      const res = await fetch(`${API_BASE_URL}/recomendaciones/${user.id}`);
       const data = await res.json();
       const recomendadas = data.data || [];
       
@@ -125,7 +126,7 @@ export default function Recomendaciones() {
   const toggleLike = async (recId) => {
     const isLiked = likes.includes(recId);
     const method = isLiked ? "DELETE" : "POST";
-    await fetch(`http://127.0.0.1:8000/likes/${user.id}/${recId}`, { method });
+    await fetch(`${API_BASE_URL}/likes/${user.id}/${recId}`, { method });
     setLikes((prev) =>
       isLiked ? prev.filter((id) => id !== recId) : [...prev, recId]
     );

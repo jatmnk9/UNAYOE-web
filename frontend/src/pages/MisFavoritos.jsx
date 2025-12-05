@@ -1,5 +1,6 @@
 import { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
+import { API_BASE_URL } from "../config/api";
 import { Heart, Loader } from "lucide-react";
 // Importamos los estilos ya que usaremos las mismas clases de tarjeta
 import "../styles/Recomendaciones.css"; 
@@ -19,7 +20,7 @@ export default function MisFavoritos() {
     const isLiked = likes.includes(recId);
     const method = isLiked ? "DELETE" : "POST";
     
-    await fetch(`http://127.0.0.1:8000/likes/${user.id}/${recId}`, { method });
+    await fetch(`${API_BASE_URL}/likes/${user.id}/${recId}`, { method });
     
     // 1. Actualiza la lista de IDs de likes
     setLikes((prev) =>
@@ -43,7 +44,7 @@ export default function MisFavoritos() {
       setLoading(true);
       try {
         // Llama al nuevo endpoint del backend
-        const res = await fetch(`http://127.0.0.1:8000/recomendaciones/favoritos/${user.id}`);
+        const res = await fetch(`${API_BASE_URL}/recomendaciones/favoritos/${user.id}`);
         const data = await res.json();
         
         const recs = data.data || [];

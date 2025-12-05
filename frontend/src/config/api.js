@@ -1,10 +1,15 @@
 // Configuración centralizada de la API
-// En desarrollo: http://127.0.0.1:8000
-// En producción: usar variable de entorno VITE_API_URL
+// En desarrollo: http://localhost:8000
+// En producción: usar variable de entorno VITE_BACKEND_URL
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+export const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
-export const getApiUrl = () => API_URL;
+export const apiCall = async (endpoint, options = {}) => {
+  const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
+  return fetch(url, options);
+};
 
-export default API_URL;
+export const getApiUrl = () => API_BASE_URL;
+
+export default API_BASE_URL;
 

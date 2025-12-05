@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import API_URL from '../config/api';
+import { API_BASE_URL } from "../config/api";
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 
@@ -76,7 +76,7 @@ export default function AppointmentsManagement() {
 
     const cargarPsicologos = async () => {
         try {
-            const response = await fetch(`${API_URL}/citas/psicologos/disponibles`);
+            const response = await fetch(`${API_BASE_URL}/citas/psicologos/disponibles`);
             const data = await response.json();
 
             if (response.ok) {
@@ -94,7 +94,7 @@ export default function AppointmentsManagement() {
     const cargarCitas = async (listaPsicologos) => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_URL}/citas/todas`);
+            const response = await fetch(`${API_BASE_URL}/citas/todas`);
             const data = await response.json();
 
             if (response.ok) {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config/api';
 import SmartRiskBadge from '../components/SmartRiskBadge';
 
 export default function SeguimientoDiario() {
@@ -13,7 +14,7 @@ export default function SeguimientoDiario() {
         try {
             // Preferimos el endpoint con alertas; si falla, hacemos fallback al listado simple.
             const pid = user?.id ? `?psychologist_id=${encodeURIComponent(user.id)}` : '';
-            const resAlerts = await fetch(`http://127.0.0.1:8000/psychologist/students-alerts${pid}`);
+            const resAlerts = await fetch(`${API_BASE_URL}/psychologist/students-alerts${pid}`);
             if (resAlerts.ok) {
                 const dataAlerts = await resAlerts.json();
                 setStudents((dataAlerts?.data || []).map(s => ({
@@ -25,7 +26,7 @@ export default function SeguimientoDiario() {
                     alert_message: s.alert_message,
                 })));
             } else {
-                const res = await fetch(`http://127.0.0.1:8000/psychologist/students${pid}`);
+                const res = await fetch(`${API_BASE_URL}/psychologist/students${pid}`);
                 if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                 const result = await res.json();
                 setStudents(result.data || []);

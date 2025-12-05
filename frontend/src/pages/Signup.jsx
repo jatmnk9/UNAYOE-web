@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { API_BASE_URL } from "../config/api";
 
 // 💡 1. Definir la estructura base para FastAPI (¡CRÍTICO!)
 const initialStudentData = {
@@ -96,8 +97,8 @@ export default function Signup() {
     };
 
     const endpoint = rol === "estudiante" ? 
-                     "http://127.0.0.1:8000/usuarios/estudiantes" : 
-                     "http://127.0.0.1:8000/usuarios/psicologos";
+                     `${API_BASE_URL}/usuarios/estudiantes` : 
+                     `${API_BASE_URL}/usuarios/psicologos`;
 
     const res = await fetch(endpoint, {
         method: "POST",

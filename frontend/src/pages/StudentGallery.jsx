@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
+import { API_BASE_URL } from "../config/api";
 import CanvasDraw from "react-canvas-draw";
 import DrawingReplay from "../components/DrawingReplay";
 
@@ -28,7 +29,7 @@ export default function StudentGallery() {
 
   const fetchDrawings = async () => {
     try {
-      const res = await fetch(`http://127.0.0.1:8000/drawings/student/${user.id}`);
+      const res = await fetch(`${API_BASE_URL}/drawings/student/${user.id}`);
       const result = await res.json();
       if (res.ok) {
         setDrawings(result.data || []);
@@ -138,7 +139,7 @@ export default function StudentGallery() {
           : null
       };
 
-      const res = await fetch("http://127.0.0.1:8000/drawings/upload", {
+      const res = await fetch(`${API_BASE_URL}/drawings/upload`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
