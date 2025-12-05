@@ -1,35 +1,31 @@
 // StudentPortal.jsx
 import { useAuth } from "../context/AuthContext";
 import { Link, Outlet, useLocation } from "react-router-dom"; 
-<<<<<<< HEAD
-import { Home as HomeIcon, NotebookPen,Heart,BookOpen,Clapperboard, LogOut } from 'lucide-react';
+import { Home as HomeIcon, NotebookPen, Heart, BookOpen, Clapperboard, LogOut, Palette, Calendar } from 'lucide-react';
 import ChatbotButton from "../components/ChatbotButton";
-=======
-import { Home as HomeIcon, NotebookPen,Heart,BookOpen,Clapperboard, LogOut, Palette } from 'lucide-react';
->>>>>>> 24efbe0b780d03e18a2e9d8423d732edfd318fdf
 
 export default function StudentPortal() {
-  // 💡 CORRECCIÓN 1: Usar 'logout' y quitar 'signOutUser' y 'loading: authLoading'
-  const { user, logout } = useAuth(); 
-  const location = useLocation();
+  // 💡 CORRECCIÓN 1: Usar 'logout' y quitar 'signOutUser' y 'loading: authLoading'
+  const { user, logout } = useAuth();
+  const location = useLocation();
 
-  const handleLogout = () => {
-    // 💡 CORRECCIÓN 2: Llamar directamente a la función 'logout' del contexto,
+  const handleLogout = () => {
+    // 💡 CORRECCIÓN 2: Llamar directamente a la función 'logout' del contexto,
     // que es síncrona y no retorna un objeto de error en tu implementación.
-    logout();
+    logout();
     // Si necesitas manejar errores o loading en el futuro, tendrás que
     // modificar tu AuthContext para que 'logout' sea asíncrono y devuelva un estado.
-  };
+  };
 
-  // 💡 CORRECCIÓN 3: Quitar el chequeo de authLoading, ya que no existe en el contexto.
-  // La protección de carga inicial se asume por la PrivateRoute en App.jsx.
-  
-  const baseUrl = "/student";
+  // 💡 CORRECCIÓN 3: Quitar el chequeo de authLoading, ya que no existe en el contexto.
+  // La protección de carga inicial se asume por la PrivateRoute en App.jsx.
 
-  // La lógica de clases activas es funcional, pero la simplificaremos un poco para ser robustos.
-  const getNavLinkClass = (path) => {
+  const baseUrl = "/student";
+
+  // La lógica de clases activas es funcional, pero la simplificaremos un poco para ser robustos.
+  const getNavLinkClass = (path) => {
     const currentPath = location.pathname;
-    
+
     // Para el Dashboard (ruta índice), debe coincidir exactamente para no estar activo en las subrutas.
     if (path === baseUrl) {
         return currentPath === baseUrl || currentPath === `${baseUrl}/`
@@ -42,65 +38,65 @@ export default function StudentPortal() {
     return currentPath === path
         ? "sidebar-nav-button active"
         : "sidebar-nav-button";
-  };
+  };
 
-  return (
-    <div className="portal-layout-container"> 
-      
-      {/* Barra Lateral / Navegación del Portal */}
-      <aside className="portal-sidebar">
-        
-        {/* Logo UNAYOE en la barra lateral */}
-        <h1 className="sidebar-logo">
-          <img src="/isotipo.png" alt="UNAYOE Isotipo" className="sidebar-logo-image" /> 
-          <span>UNAYOE</span> <div className="sidebar-logo-light">Bienestar</div>
-        </h1>
+  return (
+    <div className="portal-layout-container">
 
-        <div className="sidebar-user-header">
-          <p className="sidebar-user-email">
-            Conectado como: 
-            <span>{user?.email || 'N/A'}</span>
-          </p>
-          <button
-            onClick={handleLogout}
-            className="sidebar-logout-button"
-          >
-            <LogOut className="sidebar-nav-icon inline-block align-middle" />
-            Cerrar Sesión
-          </button>
-        </div>
+      {/* Barra Lateral / Navegación del Portal */}
+      <aside className="portal-sidebar">
 
-        <div className="portal-sidebar-content-wrapper">
-          <p className="sidebar-modules-title">Módulos</p>
-          <nav className="sidebar-nav">
-            
-            {/* Enlace al Dashboard de inicio (ruta /student) */}
-            <Link 
-              to={baseUrl} 
-              className={getNavLinkClass(baseUrl)}
-            >
-              <HomeIcon className="sidebar-nav-icon" />Dashboard
-            </Link>
-            
-            {/* Enlace al Diario */}
-            <Link 
-              to={`${baseUrl}/diario`} 
-              className={getNavLinkClass(`${baseUrl}/diario`)}
-            >
-              <BookOpen className="sidebar-nav-icon" />Mi Diario de Bienestar
-            </Link>
+        {/* Logo UNAYOE en la barra lateral */}
+        <h1 className="sidebar-logo">
+          <img src="/isotipo.png" alt="UNAYOE Isotipo" className="sidebar-logo-image" />
+          <span>UNAYOE</span> <div className="sidebar-logo-light">Bienestar</div>
+        </h1>
+
+        <div className="sidebar-user-header">
+          <p className="sidebar-user-email">
+            Conectado como:
+            <span>{user?.email || 'N/A'}</span>
+          </p>
+          <button
+            onClick={handleLogout}
+            className="sidebar-logout-button"
+          >
+            <LogOut className="sidebar-nav-icon inline-block align-middle" />
+            Cerrar Sesión
+          </button>
+        </div>
+
+        <div className="portal-sidebar-content-wrapper">
+          <p className="sidebar-modules-title">Módulos</p>
+          <nav className="sidebar-nav">
+
+            {/* Enlace al Dashboard de inicio (ruta /student) */}
+            <Link
+              to={baseUrl}
+              className={getNavLinkClass(baseUrl)}
+            >
+              <HomeIcon className="sidebar-nav-icon" />Dashboard
+            </Link>
 
             {/* Enlace al Diario */}
-            <Link 
-              to={`${baseUrl}/recomendaciones`} 
-              className={getNavLinkClass(`${baseUrl}/recomendaciones`)}
-            >
-              <Clapperboard className="sidebar-nav-icon" />PsicoTips
-            </Link>
+            <Link
+              to={`${baseUrl}/diario`}
+              className={getNavLinkClass(`${baseUrl}/diario`)}
+            >
+              <BookOpen className="sidebar-nav-icon" />Mi Diario de Bienestar
+            </Link>
+
+            {/* Enlace al Diario */}
+            <Link
+              to={`${baseUrl}/recomendaciones`}
+              className={getNavLinkClass(`${baseUrl}/recomendaciones`)}
+            >
+              <Clapperboard className="sidebar-nav-icon" />PsicoTips
+            </Link>
 
 {/* 💖 NUEVO ENLACE: Mis Favoritos */}
-            <Link 
-              to={`${baseUrl}/favoritos`} 
+            <Link
+              to={`${baseUrl}/favoritos`}
               className={getNavLinkClass(`${baseUrl}/favoritos`)}
             >
               <Heart className="sidebar-nav-icon" />Mis Favoritos
@@ -119,11 +115,18 @@ export default function StudentPortal() {
             >
                 <NotebookPen className="sidebar-nav-icon" />Seguimiento de Citas
             </Link>
-            
-          </nav>
-        </div>
-        
-      </aside>
+
+            <Link
+                to={`${baseUrl}/citas`}
+                className={getNavLinkClass(`${baseUrl}/citas`)}
+            >
+                <Calendar className="sidebar-nav-icon" />Mis Citas
+            </Link>
+
+          </nav>
+        </div>
+
+      </aside>
 
       {/* Contenido Principal */}
       <main className="portal-main-content">

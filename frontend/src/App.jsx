@@ -22,6 +22,7 @@ import SeguimientoCitas from "./pages/SeguimientoCitas";
 import StudentAttendanceReport from "./pages/StudentAttendanceReport";
 import StudentGallery from "./pages/StudentGallery";
 import PsychologistDrawingsView from "./pages/PsychologistDrawingsView";
+import MisCitas from "./pages/MisCitas";
 
 // ✅ RUTA PRIVADA integrada
 function PrivateRoute({ children, role }) {
@@ -119,6 +120,7 @@ export default function App() {
         <Route path="favoritos" element={<MisFavoritos />} />
         <Route path="gallery" element={<StudentGallery />} />
         <Route path="asistencia" element={<StudentAttendance />} />
+        <Route path="citas" element={<MisCitas />} />
       </Route>
 
       {/* =======================================

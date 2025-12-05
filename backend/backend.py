@@ -5,7 +5,7 @@ import base64
 import os
 import requests
 from typing import List, Dict, Any
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi import BackgroundTasks
@@ -31,8 +31,9 @@ from app.db.supabase_client import supabase
 
 # Modelos Pydantic
 from app.models.schemas import (
-    Estudiante, Psicologo, AsistenciaRequest, Note, 
-    LoginRequest, FaceRegisterRequest, FaceVerifyRequest
+    Estudiante, Psicologo, AsistenciaRequest, Note,
+    LoginRequest, FaceRegisterRequest, FaceVerifyRequest,
+    CitaCreate, CitaUpdate, CitaAsignarPsicologo, CitaResponse
 )
 
 # Servicios
@@ -43,6 +44,7 @@ from app.services.gemini_service import GeminiService
 from app.services.face_recognition_service import FaceRecognitionService
 from app.services.visualization_service import VisualizationService
 from app.services.drawing_analysis_service import DrawingAnalysisService
+from app.services.appointments_service import AppointmentsService
 
 # Recomendaciones
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -244,10 +246,24 @@ async def analyze_asistencia_aprendizaje(user_id: str):
     # 4. Crear visualizaciones usando servicio
     analysis_images = VisualizationService.create_visualizations(df_analizado)
 
+    # 5. Mergear resultados del análisis con las notas originales
+    analyzed_notes = []
+    for i, note in enumerate(data):
+        if i < len(df_analizado):
+            analysis_result = df_analizado.iloc[i]
+            analyzed_notes.append({
+                **note,  # Mantener todos los campos originales
+                'sentimiento': analysis_result['sentimiento'],
+                'emocion': analysis_result['emocion'],
+                'emocion_score': analysis_result['emocion_score']
+            })
+        else:
+            analyzed_notes.append(note)
+
     return {
         "message": "Análisis de aprendizajes completado con éxito",
         "analysis": analysis_images,
-        "notes": data
+        "notes": analyzed_notes
     }
 
 @app.post("/attendance-insight")
@@ -964,4 +980,95 @@ async def analyze_drawing(drawing_id: str):
         print(f"Error al analizar dibujo: {e}")
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error interno al analizar dibujo: {e}")
+
+
+# =========================================================
+# 📅 ENDPOINTS DE CITAS
+# =========================================================
+
+@app.post("/citas", response_model=CitaResponse)
+async def crear_cita(
+    cita_data: CitaCreate,
+    id_usuario: str = Query(..., description="ID del usuario que crea la cita")
+):
+    """Crea una nueva cita. Solo estudiantes pueden crear citas."""
+    return AppointmentsService.crear_cita(cita_data, id_usuario)
+
+
+@app.get("/citas/pendientes")
+async def obtener_citas_pendientes():
+    """Obtiene citas sin psicólogo asignado."""
+    citas = AppointmentsService.obtener_citas_pendientes()
+    return {
+        "message": "Citas pendientes recuperadas con éxito",
+        "data": citas
+    }
+
+
+@app.get("/citas/todas")
+async def obtener_todas_las_citas():
+    """Obtiene todas las citas del sistema."""
+    citas = AppointmentsService.obtener_todas_las_citas()
+    return {
+        "message": "Todas las citas recuperadas con éxito",
+        "data": citas
+    }
+
+
+@app.get("/citas/usuario/{id_usuario}")
+async def obtener_citas_usuario(id_usuario: str):
+    """
+    Obtiene citas de un usuario específico.
+    - Estudiante: citas creadas
+    - Psicólogo: citas asignadas
+    """
+    citas = AppointmentsService.obtener_citas_usuario(id_usuario)
+    return {
+        "message": "Citas del usuario recuperadas con éxito",
+        "data": citas
+    }
+
+
+@app.get("/citas/{id_cita}", response_model=CitaResponse)
+async def obtener_cita_por_id(id_cita: int):
+    """Obtiene una cita por ID."""
+    return AppointmentsService.obtener_cita_por_id(id_cita)
+
+
+@app.put("/citas/{id_cita}/asignar-psicologo", response_model=CitaResponse)
+async def asignar_psicologo(
+    id_cita: int,
+    asignacion: CitaAsignarPsicologo
+):
+    """Asigna un psicólogo a una cita."""
+    return AppointmentsService.asignar_psicologo(id_cita, asignacion)
+
+
+@app.put("/citas/{id_cita}", response_model=CitaResponse)
+async def actualizar_cita(
+    id_cita: int,
+    cita_update: CitaUpdate,
+    id_usuario: str = Query(..., description="ID del usuario que actualiza")
+):
+    """Actualiza una cita. Solo el creador puede actualizar."""
+    return AppointmentsService.actualizar_cita(id_cita, cita_update, id_usuario)
+
+
+@app.delete("/citas/{id_cita}")
+async def eliminar_cita(
+    id_cita: int,
+    id_usuario: str = Query(..., description="ID del usuario que elimina")
+):
+    """Elimina una cita. Solo el creador puede eliminar."""
+    return AppointmentsService.eliminar_cita(id_cita, id_usuario)
+
+
+@app.get("/citas/psicologos/disponibles")
+async def obtener_psicologos_disponibles():
+    """Obtiene lista de psicólogos disponibles."""
+    psicologos = AppointmentsService.obtener_psicologos_disponibles()
+    return {
+        "message": "Psicólogos disponibles recuperados con éxito",
+        "data": psicologos
+    }
 
