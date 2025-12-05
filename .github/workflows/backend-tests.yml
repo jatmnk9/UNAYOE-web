@@ -1,0 +1,169 @@
+name: Backend Tests CI/CD
+
+on:
+  push:
+    branches: [main, develop, refactorbackend]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-tests.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-tests.yml'
+
+jobs:
+  test:
+    name: Run Backend Tests
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11']
+
+    steps:
+      # =========================================================
+      # CHECKOUT DEL CÓDIGO
+      # =========================================================
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # =========================================================
+      # CONFIGURAR PYTHON
+      # =========================================================
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      # =========================================================
+      # INSTALAR DEPENDENCIAS
+      # =========================================================
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # =========================================================
+      # CONFIGURAR VARIABLES DE ENTORNO PARA TESTS
+      # =========================================================
+      - name: Set up environment variables
+        working-directory: backend
+        run: |
+          cat > .env << EOF
+          APP_NAME="UNAYOE Test"
+          DEBUG=true
+          API_VERSION="2.0.0-test"
+          SUPABASE_URL="https://test.supabase.co"
+          SUPABASE_KEY="test_key_for_ci"
+          CORS_ORIGINS="http://localhost:3000"
+          SENTIMENT_MODEL="pysentimiento/robertuito-sentiment-analysis"
+          EMOTION_MODEL="pysentimiento/robertuito-emotion-analysis"
+          GEMINI_API_KEY="test_gemini_key"
+          GEMINI_MODEL="gemini-2.0-flash"
+          GMAIL_SENDER="test@example.com"
+          GMAIL_SMTP_PASSWORD="test_password"
+          ALERT_FALLBACK_EMAIL="alert@example.com"
+          EOF
+
+      # =========================================================
+      # EJECUTAR PRUEBAS UNITARIAS
+      # =========================================================
+      - name: Run unit tests
+        working-directory: backend
+        run: |
+          pytest tests/unit -v -m "unit" --tb=short
+
+      # =========================================================
+      # EJECUTAR PRUEBAS DE SERVICIOS NLP/IA
+      # =========================================================
+      - name: Run NLP/AI service tests
+        working-directory: backend
+        run: |
+          pytest tests/unit -v -m "nlp" --tb=short
+
+      # =========================================================
+      # EJECUTAR PRUEBAS DE INTEGRACIÓN
+      # =========================================================
+      - name: Run integration tests
+        working-directory: backend
+        run: |
+          pytest tests/integration -v -m "integration" --tb=short
+
+      # =========================================================
+      # EJECUTAR TODAS LAS PRUEBAS CON COBERTURA
+      # =========================================================
+      - name: Run all tests with coverage
+        working-directory: backend
+        run: |
+          pytest --cov=app --cov-report=xml --cov-report=term-missing
+
+      # =========================================================
+      # SUBIR REPORTE DE COBERTURA
+      # =========================================================
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./backend/coverage.xml
+          flags: backend
+          name: backend-coverage
+          fail_ci_if_error: false
+
+      # =========================================================
+      # GENERAR REPORTE DE PRUEBAS
+      # =========================================================
+      - name: Generate test report
+        if: always()
+        working-directory: backend
+        run: |
+          pytest --tb=short --junitxml=test-results.xml
+
+      # =========================================================
+      # PUBLICAR REPORTE DE PRUEBAS
+      # =========================================================
+      - name: Publish test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.python-version }}
+          path: backend/test-results.xml
+
+  # =========================================================
+  # JOB DE ANÁLISIS DE CALIDAD DE CÓDIGO
+  # =========================================================
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black isort
+
+      - name: Check code formatting with black
+        working-directory: backend
+        run: |
+          black --check app/ tests/ || echo "Code formatting issues found"
+
+      - name: Check imports with isort
+        working-directory: backend
+        run: |
+          isort --check-only app/ tests/ || echo "Import sorting issues found"
+
+      - name: Lint with flake8
+        working-directory: backend
+        run: |
+          flake8 app/ tests/ --count --max-line-length=100 --statistics || echo "Linting issues found"
