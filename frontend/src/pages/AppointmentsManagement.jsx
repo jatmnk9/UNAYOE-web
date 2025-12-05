@@ -2,14 +2,19 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import API_URL from '../config/api';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
 
 export default function AppointmentsManagement() {
     const [citas, setCitas] = useState([]);
+    const [citasFiltradas, setCitasFiltradas] = useState([]);
     const [psicologos, setPsicologos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showAssignModal, setShowAssignModal] = useState(false);
     const [citaSeleccionada, setCitaSeleccionada] = useState(null);
     const [psicologoSeleccionado, setPsicologoSeleccionado] = useState('');
+    const [fechaSeleccionada, setFechaSeleccionada] = useState(new Date());
+    const [filtroEstado, setFiltroEstado] = useState('todas');
     const navigate = useNavigate();
     const { user } = useAuth();
 
@@ -18,6 +23,56 @@ export default function AppointmentsManagement() {
             cargarPsicologos();
         }
     }, [user?.id]);
+
+    // Filtrar citas por fecha y estado
+    useEffect(() => {
+        filtrarCitas();
+    }, [citas, fechaSeleccionada, filtroEstado]);
+
+    const filtrarCitas = () => {
+        let citasFiltradasTemp = [...citas];
+
+        // Filtrar por estado
+        if (filtroEstado !== 'todas') {
+            citasFiltradasTemp = citasFiltradasTemp.filter(cita => {
+                if (filtroEstado === 'confirmadas') {
+                    return cita.id_psicologo && cita.estado === 'confirmada';
+                } else if (filtroEstado === 'pendientes') {
+                    return !cita.id_psicologo || cita.estado !== 'confirmada';
+                }
+                return true;
+            });
+        }
+
+        // Filtrar por fecha si hay una fecha seleccionada
+        if (fechaSeleccionada) {
+            const fechaSeleccionadaStr = fechaSeleccionada.toISOString().split('T')[0];
+            citasFiltradasTemp = citasFiltradasTemp.filter(cita => {
+                const fechaCita = new Date(cita.fecha_cita).toISOString().split('T')[0];
+                return fechaCita === fechaSeleccionadaStr;
+            });
+        }
+
+        setCitasFiltradas(citasFiltradasTemp);
+    };
+
+    // Función para obtener las fechas que tienen citas
+    const obtenerFechasConCitas = () => {
+        const fechas = citas
+            .filter(cita => cita.estado === 'confirmada')
+            .map(cita => {
+                const fecha = new Date(cita.fecha_cita);
+                return new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+            });
+
+        // Eliminar duplicados
+        return [...new Set(fechas.map(date => date.getTime()))].map(time => new Date(time));
+    };
+
+    // Función para manejar el cambio de fecha en el calendario
+    const manejarCambioFecha = (date) => {
+        setFechaSeleccionada(date);
+    };
 
     const cargarPsicologos = async () => {
         try {
@@ -232,62 +287,293 @@ export default function AppointmentsManagement() {
                     </ul>
                 </div>
 
-                {/* Lista de citas con mejor diseño */}
-                {loading ? (
+                {/* Layout principal: Calendario + Lista de citas */}
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '350px 1fr',
+                    gap: '2rem',
+                    marginTop: '2rem'
+                }}>
+                    {/* Calendario */}
                     <div style={{
-                        background: "white",
-                        padding: "4rem 2rem",
-                        borderRadius: "16px",
-                        textAlign: "center",
-                        boxShadow: "0 4px 20px rgba(0,0,0,0.08)"
+                        background: 'white',
+                        borderRadius: '16px',
+                        padding: '1.5rem',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                        height: 'fit-content',
+                        position: 'sticky',
+                        top: '2rem'
                     }}>
-                        <div style={{
-                            width: "60px",
-                            height: "60px",
-                            border: "4px solid #667eea",
-                            borderTopColor: "transparent",
-                            borderRadius: "50%",
-                            margin: "0 auto 1.5rem",
-                            animation: "spin 1s linear infinite"
-                        }}></div>
-                        <p style={{ fontWeight: 600, color: "#667eea", fontSize: "1.2rem" }}>
-                            Cargando citas...
-                        </p>
-                    </div>
-                ) : citas.length === 0 ? (
-                    <div style={{
-                        background: "white",
-                        padding: "4rem 2rem",
-                        borderRadius: "16px",
-                        textAlign: "center",
-                        boxShadow: "0 4px 20px rgba(0,0,0,0.08)"
-                    }}>
-                        <div style={{
-                            width: "80px",
-                            height: "80px",
-                            margin: "0 auto 1.5rem",
-                            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                            borderRadius: "50%",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "2.5rem"
+                        <h3 style={{
+                            fontSize: '1.4rem',
+                            fontWeight: '700',
+                            color: '#2d3748',
+                            marginBottom: '1.5rem',
+                            textAlign: 'center',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem'
                         }}>
-                            ✅
-                        </div>
-                        <h3 style={{ fontSize: "1.4rem", fontWeight: 700, color: "#2d3748", marginBottom: "0.5rem" }}>
-                            No hay citas registradas
+                            📅 Calendario de Citas
                         </h3>
-                        <p style={{ color: "#718096", fontSize: "1rem" }}>
-                            Aún no hay citas en el sistema
-                        </p>
-                    </div>
-                ) : (
-                    <div style={{
-                        display: "grid",
-                        gap: "1.5rem"
-                    }}>
-                        {citas.map((cita, index) => (
+
+                        <Calendar
+                            onChange={manejarCambioFecha}
+                            value={fechaSeleccionada}
+                            tileContent={({ date, view }) => {
+                                if (view === 'month') {
+                                    const fechaStr = date.toISOString().split('T')[0];
+                                    const citasEnFecha = citas.filter(cita => {
+                                        const fechaCita = new Date(cita.fecha_cita).toISOString().split('T')[0];
+                                        return fechaCita === fechaStr && cita.estado === 'confirmada';
+                                    });
+
+                                    if (citasEnFecha.length > 0) {
+                                        return (
+                                            <div style={{
+                                                position: 'absolute',
+                                                bottom: '2px',
+                                                left: '50%',
+                                                transform: 'translateX(-50%)',
+                                                width: '6px',
+                                                height: '6px',
+                                                borderRadius: '50%',
+                                                background: '#667eea',
+                                                boxShadow: '0 0 4px rgba(102, 126, 234, 0.5)'
+                                            }} />
+                                        );
+                                    }
+                                }
+                                return null;
+                            }}
+                            tileClassName={({ date, view }) => {
+                                if (view === 'month') {
+                                    const fechaStr = date.toISOString().split('T')[0];
+                                    const citasEnFecha = citas.filter(cita => {
+                                        const fechaCita = new Date(cita.fecha_cita).toISOString().split('T')[0];
+                                        return fechaCita === fechaStr;
+                                    });
+
+                                    if (citasEnFecha.length > 0) {
+                                        return 'react-calendar__tile--has-appointments';
+                                    }
+                                }
+                                return null;
+                            }}
+                        />
+
+                        {/* Filtros */}
+                        <div style={{ marginTop: '1.5rem' }}>
+                            <h4 style={{
+                                fontSize: '1rem',
+                                fontWeight: '600',
+                                color: '#4a5568',
+                                marginBottom: '1rem'
+                            }}>
+                                🎯 Filtros
+                            </h4>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <label style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    cursor: 'pointer',
+                                    padding: '0.5rem',
+                                    borderRadius: '8px',
+                                    transition: 'background 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.target.style.background = '#f7fafc'}
+                                onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="filtroEstado"
+                                        value="todas"
+                                        checked={filtroEstado === 'todas'}
+                                        onChange={(e) => setFiltroEstado(e.target.value)}
+                                    />
+                                    <span style={{ fontSize: '0.9rem', color: '#4a5568' }}>
+                                        Todas las citas
+                                    </span>
+                                </label>
+
+                                <label style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    cursor: 'pointer',
+                                    padding: '0.5rem',
+                                    borderRadius: '8px',
+                                    transition: 'background 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.target.style.background = '#f7fafc'}
+                                onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="filtroEstado"
+                                        value="confirmadas"
+                                        checked={filtroEstado === 'confirmadas'}
+                                        onChange={(e) => setFiltroEstado(e.target.value)}
+                                    />
+                                    <span style={{ fontSize: '0.9rem', color: '#4a5568' }}>
+                                        Solo confirmadas
+                                    </span>
+                                </label>
+
+                                <label style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    cursor: 'pointer',
+                                    padding: '0.5rem',
+                                    borderRadius: '8px',
+                                    transition: 'background 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.target.style.background = '#f7fafc'}
+                                onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="filtroEstado"
+                                        value="pendientes"
+                                        checked={filtroEstado === 'pendientes'}
+                                        onChange={(e) => setFiltroEstado(e.target.value)}
+                                    />
+                                    <span style={{ fontSize: '0.9rem', color: '#4a5568' }}>
+                                        Pendientes
+                                    </span>
+                                </label>
+                            </div>
+
+                            <button
+                                onClick={() => setFechaSeleccionada(null)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem',
+                                    marginTop: '1rem',
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    transition: 'transform 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
+                                onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+                            >
+                                🔄 Ver todas las fechas
+                            </button>
+                        </div>
+                    </div> {/* Cierre del calendario */}
+
+                    {/* Lista de citas */}
+                    <div>
+                        <div style={{
+                            background: 'white',
+                            borderRadius: '16px',
+                            padding: '1.5rem',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                            marginBottom: '1rem'
+                        }}>
+                            <h3 style={{
+                                fontSize: '1.4rem',
+                                fontWeight: '700',
+                                color: '#2d3748',
+                                marginBottom: '1rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between'
+                            }}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    📋 Lista de Citas
+                                    <span style={{
+                                        background: '#667eea',
+                                        color: 'white',
+                                        padding: '0.2rem 0.6rem',
+                                        borderRadius: '12px',
+                                        fontSize: '0.8rem',
+                                        fontWeight: '600'
+                                    }}>
+                                        {citasFiltradas.length}
+                                    </span>
+                                </span>
+                                {fechaSeleccionada && (
+                                    <span style={{
+                                        fontSize: '0.9rem',
+                                        color: '#667eea',
+                                        fontWeight: '600'
+                                    }}>
+                                        {fechaSeleccionada.toLocaleDateString('es-ES', {
+                                            weekday: 'long',
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric'
+                                        })}
+                                    </span>
+                                )}
+                            </h3>
+                        </div>
+
+                        {loading ? (
+                            <div style={{
+                                background: "white",
+                                padding: "4rem 2rem",
+                                borderRadius: "16px",
+                                textAlign: "center",
+                                boxShadow: "0 4px 20px rgba(0,0,0,0.08)"
+                            }}>
+                                <div style={{
+                                    width: "60px",
+                                    height: "60px",
+                                    border: "4px solid #667eea",
+                                    borderTopColor: "transparent",
+                                    borderRadius: "50%",
+                                    margin: "0 auto 1.5rem",
+                                    animation: "spin 1s linear infinite"
+                                }}></div>
+                                <p style={{ fontWeight: 600, color: "#667eea", fontSize: "1.2rem" }}>
+                                    Cargando citas...
+                                </p>
+                            </div>
+                        ) : (
+                            citasFiltradas.length === 0 ? (
+                                <div style={{
+                                    background: "white",
+                                    padding: "4rem 2rem",
+                                    borderRadius: "16px",
+                                    textAlign: "center",
+                                    boxShadow: "0 4px 20px rgba(0,0,0,0.08)"
+                                }}>
+                                    <div style={{
+                                        width: "80px",
+                                        height: "80px",
+                                        margin: "0 auto 1.5rem",
+                                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                                        borderRadius: "50%",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        fontSize: "2.5rem"
+                                    }}>
+                                        ✅
+                                    </div>
+                                    <h3 style={{ fontSize: "1.4rem", fontWeight: 700, color: "#2d3748", marginBottom: "0.5rem" }}>
+                                        No hay citas registradas
+                                    </h3>
+                                    <p style={{ color: "#718096", fontSize: "1rem" }}>
+                                        Aún no hay citas en el sistema
+                                    </p>
+                                </div>
+                            ) : (
+                                <div style={{
+                                    display: "grid",
+                                    gap: "1.5rem"
+                                }}>
+                                    {citasFiltradas.map((cita, index) => (
                             <div
                                 key={cita.id_cita}
                                 style={{
@@ -476,11 +762,14 @@ export default function AppointmentsManagement() {
                                             {cita.id_psicologo ? "✏️ Cambiar Psicólogo" : "👨‍⚕️ Asignar Psicólogo"}
                                         </button>
                                     </div>
+                                        </div>
+                                    </div>
+                                    ))}
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
+                            )
+                        )}
+                    </div> {/* Cierre de la lista de citas */}
+                </div> {/* Cierre del grid */}
             </div>
 
             {/* Modal mejorado */}
