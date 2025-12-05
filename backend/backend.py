@@ -280,8 +280,8 @@ async def analyze_asistencia_aprendizaje(user_id: str):
     # 2. Convertir a DataFrame y renombrar columna para reutilizar la lógica
     df = pd.DataFrame(data).rename(columns={'aprendizaje_obtenido': 'note'})
 
-    # 3. Analizar los aprendizajes usando servicio (ahora incluye topics)
-    df_analizado, global_topics = TextAnalysisService.analyze_diary_complete(df)
+    # 3. Analizar los aprendizajes usando servicio con topics
+    df_analizado, global_topics = TextAnalysisService.analyze_diary_complete_with_topics(df)
 
     # 4. Crear visualizaciones usando servicio
     analysis_images = VisualizationService.create_visualizations(df_analizado)
