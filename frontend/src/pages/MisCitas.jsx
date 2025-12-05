@@ -159,13 +159,15 @@ export default function MisCitas() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto max-w-4xl p-6">
+    <div className="portal-main-content">
+      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h1 className="mb-2 text-3xl font-bold text-gray-900">Mis Citas</h1>
-            <p className="text-gray-600">
+            <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--color-dark)', marginBottom: '0.5rem' }}>
+              Mis Citas
+            </h1>
+            <p style={{ color: 'var(--color-text-gray)', fontSize: '1rem' }}>
               Gestiona tus citas con el servicio de psicología
             </p>
           </div>
@@ -178,11 +180,13 @@ export default function MisCitas() {
         </div>
 
         {/* Card informativa */}
-        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <Card style={{ marginBottom: '1.5rem', background: 'linear-gradient(135deg, #EBF4FF 0%, #E0E7FF 100%)', border: '1px solid #DBEAFE' }}>
           <CardHeader>
-            <CardTitle className="text-lg">Información importante</CardTitle>
+            <CardTitle style={{ fontSize: '1.125rem', color: 'var(--color-dark)' }}>
+              Información importante
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm text-gray-700">
+          <CardContent style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem', color: '#374151' }}>
             <p>• Las citas son confirmadas por el psicólogo asignado</p>
             <p>• Recibirás una notificación cuando tu cita sea confirmada</p>
             <p>• Puedes cancelar una cita con al menos 24 horas de anticipación</p>
@@ -191,20 +195,20 @@ export default function MisCitas() {
         </Card>
 
         {/* Lista de citas */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--color-dark)' }}>
             Mis Citas ({citas.length})
           </h2>
 
           {loading ? (
-            <div className="py-12 text-center">
-              <p className="text-gray-600">Cargando citas...</p>
+            <div style={{ padding: '3rem', textAlign: 'center' }}>
+              <p style={{ color: 'var(--color-text-gray)', fontSize: '1rem' }}>Cargando citas...</p>
             </div>
           ) : citas.length === 0 ? (
             <Card>
-              <CardContent className="py-12 text-center">
+              <CardContent style={{ padding: '3rem', textAlign: 'center' }}>
                 <svg
-                  className="mx-auto mb-4 h-16 w-16 text-gray-400"
+                  style={{ margin: '0 auto 1rem auto', width: '4rem', height: '4rem', color: '#9CA3AF' }}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -216,51 +220,51 @@ export default function MisCitas() {
                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                   />
                 </svg>
-                <h3 className="mb-2 text-lg font-semibold text-gray-700">
+                <h3 style={{ marginBottom: '0.5rem', fontSize: '1.125rem', fontWeight: 600, color: '#4B5563' }}>
                   No hay citas registradas
                 </h3>
-                <p className="text-sm text-gray-500">
+                <p style={{ fontSize: '0.875rem', color: 'var(--color-text-gray)' }}>
                   Solicita una cita para recibir apoyo psicológico
                 </p>
               </CardContent>
             </Card>
           ) : (
             citas.map((cita) => (
-              <Card key={cita.id_cita} className="transition-shadow hover:shadow-md">
-                <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="rounded-full bg-yellow-100 px-3 py-1 text-sm font-medium text-yellow-800">
+              <Card key={cita.id_cita} style={{ transition: 'box-shadow 0.3s ease, transform 0.3s ease' }}>
+                <CardHeader style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingBottom: '0.75rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <span style={{ borderRadius: '9999px', background: '#FEF3C7', padding: '0.25rem 0.75rem', fontSize: '0.875rem', fontWeight: 500, color: '#92400E' }}>
                         Pendiente
                       </span>
-                      <span className="text-sm text-gray-600">
+                      <span style={{ fontSize: '0.875rem', color: 'var(--color-text-gray)' }}>
                         {formatearFecha(cita.fecha_cita)}
                       </span>
                     </div>
                     {cita.id_psicologo && (
-                      <p className="text-sm text-gray-500">
+                      <p style={{ fontSize: '0.875rem', color: 'var(--color-text-gray)' }}>
                         Psicólogo: {cita.nombre_psicologo || 'Asignado'}
                       </p>
                     )}
                   </div>
                 </CardHeader>
 
-                <CardContent className="space-y-3">
+                <CardContent style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <div>
-                    <h4 className="mb-1 text-sm font-semibold text-gray-700">
+                    <h4 style={{ marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 600, color: '#4B5563' }}>
                       Motivo de consulta:
                     </h4>
-                    <p className="whitespace-pre-wrap text-sm text-gray-600">
+                    <p style={{ whiteSpace: 'pre-wrap', fontSize: '0.875rem', color: 'var(--color-text-gray)' }}>
                       {cita.titulo}
                     </p>
                   </div>
 
-                  <div className="flex justify-end border-t pt-3">
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #E5E7EB', paddingTop: '0.75rem' }}>
                     <Button
                       onClick={() => handleCancelar(cita.id_cita)}
                       variant="destructive"
                       size="sm"
-                      className="bg-red-600 text-white hover:bg-red-700"
+                      style={{ background: '#DC2626', color: 'white' }}
                     >
                       Cancelar cita
                     </Button>
@@ -274,10 +278,10 @@ export default function MisCitas() {
 
       {/* Modal para nueva cita */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.5)' }}>
+          <div style={{ width: '100%', maxWidth: '28rem', borderRadius: '0.75rem', background: 'white', padding: '1.5rem', boxShadow: 'var(--shadow-lg)' }}>
+            <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-dark)' }}>
                 Solicitar Nueva Cita
               </h2>
               <button
@@ -286,10 +290,10 @@ export default function MisCitas() {
                   setFormData({ titulo: '', fecha_cita: '' });
                   setErrors({});
                 }}
-                className="text-gray-400 hover:text-gray-600"
+                style={{ color: '#9CA3AF', cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}
               >
                 <svg
-                  className="h-6 w-6"
+                  style={{ width: '1.5rem', height: '1.5rem' }}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -304,12 +308,13 @@ export default function MisCitas() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {/* Motivo */}
-              <div>
+              <div className="login-field">
                 <label
                   htmlFor="titulo"
-                  className="mb-2 block text-sm font-medium text-gray-700"
+                  className="login-label"
+                  style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-dark)' }}
                 >
                   Motivo de la consulta
                 </label>
@@ -320,23 +325,30 @@ export default function MisCitas() {
                   value={formData.titulo}
                   onChange={handleInputChange}
                   placeholder="Describe brevemente el motivo de tu consulta..."
-                  className={`w-full rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-2 ${
-                    errors.titulo
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                  }`}
+                  className="login-input"
+                  style={{
+                    width: '100%',
+                    padding: '0.85rem 1rem',
+                    border: errors.titulo ? '1px solid #FCA5A5' : '1px solid #E5E7EB',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '0.875rem',
+                    color: 'var(--color-dark)',
+                    background: 'var(--color-soft-bg)',
+                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
+                  }}
                   required
                 />
                 {errors.titulo && (
-                  <p className="mt-1 text-xs text-red-500">{errors.titulo}</p>
+                  <p style={{ marginTop: '0.25rem', fontSize: '0.75rem', color: '#DC2626' }}>{errors.titulo}</p>
                 )}
               </div>
 
               {/* Fecha y hora */}
-              <div>
+              <div className="login-field">
                 <label
                   htmlFor="fecha_cita"
-                  className="mb-2 block text-sm font-medium text-gray-700"
+                  className="login-label"
+                  style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-dark)' }}
                 >
                   Fecha y hora deseada
                 </label>
@@ -347,35 +359,49 @@ export default function MisCitas() {
                   value={formData.fecha_cita}
                   onChange={handleInputChange}
                   min={obtenerFechaMinima()}
-                  className={`w-full rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-2 ${
-                    errors.fecha_cita
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                  }`}
+                  className="login-input"
+                  style={{
+                    width: '100%',
+                    padding: '0.85rem 1rem',
+                    border: errors.fecha_cita ? '1px solid #FCA5A5' : '1px solid #E5E7EB',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '0.875rem',
+                    color: 'var(--color-dark)',
+                    background: 'var(--color-soft-bg)',
+                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
+                  }}
                   required
                 />
                 {errors.fecha_cita && (
-                  <p className="mt-1 text-xs text-red-500">{errors.fecha_cita}</p>
+                  <p style={{ marginTop: '0.25rem', fontSize: '0.75rem', color: '#DC2626' }}>{errors.fecha_cita}</p>
                 )}
               </div>
 
               {/* Botones */}
-              <div className="flex justify-end gap-2">
-                <Button
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <button
                   type="button"
                   onClick={() => {
                     setShowModal(false);
                     setFormData({ titulo: '', fecha_cita: '' });
                     setErrors({});
                   }}
-                  variant="outline"
-                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                  style={{
+                    padding: '0.6rem 1.25rem',
+                    border: '1px solid #D1D5DB',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'white',
+                    color: '#374151',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    transition: 'background 0.2s ease'
+                  }}
                 >
                   Cancelar
-                </Button>
+                </button>
                 <Button
                   type="submit"
-                  className="bg-blue-600 text-white hover:bg-blue-700"
+                  style={{ background: '#2563EB', color: 'white', padding: '0.6rem 1.25rem' }}
                 >
                   Solicitar cita
                 </Button>
