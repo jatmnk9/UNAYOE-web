@@ -112,12 +112,12 @@ export default function StudentPortal() {
                 to={`${baseUrl}/asistencia`}
                 className={getNavLinkClass(`${baseUrl}/asistencia`)}
             >
-                <NotebookPen className="sidebar-nav-icon" />Seguimiento de Citas
+                <NotebookPen className="sidebar-nav-icon" />Asistencia
             </Link>
 
             <Link
-                to={`${baseUrl}/citas`}
-                className={getNavLinkClass(`${baseUrl}/citas`)}
+                to={`${baseUrl}/appointments`}
+                className={getNavLinkClass(`${baseUrl}/appointments`)}
             >
                 <Calendar className="sidebar-nav-icon" />Mis Citas
             </Link>

@@ -69,6 +69,12 @@ export default function PsychologistPortal() {
                             to={`${baseUrl}/seguimiento-citas`}
                             className={getNavLinkClass(`${baseUrl}/seguimiento-citas`)}
                         >
+                            <NotebookPen className="sidebar-nav-icon" />Seguimiento de Aprendizajes
+                        </Link>
+                        <Link
+                            to={`${baseUrl}/appointments-management`}
+                            className={getNavLinkClass(`${baseUrl}/appointments-management`)}
+                        >
                             <Calendar className="sidebar-nav-icon" />Gestión de Citas
                         </Link>
                         <Link
