@@ -45,6 +45,7 @@ from app.services.face_recognition_service import FaceRecognitionService
 from app.services.visualization_service import VisualizationService
 from app.services.drawing_analysis_service import DrawingAnalysisService
 from app.services.appointments_service import AppointmentsService
+from app.services.encryption_service import encryption_service
 
 # Recomendaciones
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -86,8 +87,17 @@ async def crear_estudiante(estudiante: Estudiante):
         data = estudiante.dict()
         data["rol"] = "estudiante"
         
+        # 🔐 Encriptar campos sensibles
+        campos_sensibles_usuarios = ["nombre", "apellido", "dni", "edad", "direccion", "foto_perfil_url", "face_encoding"]
+        data = encryption_service.encrypt_dict_fields(data, campos_sensibles_usuarios)
+        
         # 🔑 Supabase usa el ID proporcionado para la clave foránea
         response = supabase.table("usuarios").insert(data).execute()
+        
+        # 🔓 Desencriptar datos en la respuesta
+        if response.data:
+            response.data = [encryption_service.decrypt_dict_fields(item, campos_sensibles_usuarios) for item in response.data]
+        
         return {"message": "Estudiante creado con éxito", "data": response.data}
     except Exception as e:
         # Esto atrapará el error si el ID ya existe o es inválido
@@ -98,7 +108,17 @@ async def crear_psicologo(psicologo: Psicologo):
     try:
         data = psicologo.dict()
         data["rol"] = "psicologo"
+        
+        # 🔐 Encriptar campos sensibles
+        campos_sensibles_usuarios = ["nombre", "apellido", "dni", "edad", "direccion", "foto_perfil_url", "face_encoding"]
+        data = encryption_service.encrypt_dict_fields(data, campos_sensibles_usuarios)
+        
         response = supabase.table("usuarios").insert(data).execute()
+        
+        # 🔓 Desencriptar datos en la respuesta
+        if response.data:
+            response.data = [encryption_service.decrypt_dict_fields(item, campos_sensibles_usuarios) for item in response.data]
+        
         return {"message": "Psicólogo creado con éxito", "data": response.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -126,6 +146,10 @@ async def login_user(credentials: LoginRequest):
             raise HTTPException(status_code=404, detail="Usuario no encontrado en tabla 'usuarios'")
 
         user_profile = profile_response.data
+
+        # 🔓 Desencriptar campos sensibles del usuario
+        campos_sensibles_usuarios = ["nombre", "apellido", "dni", "edad", "direccion", "foto_perfil_url", "face_encoding"]
+        user_profile = encryption_service.decrypt_dict_fields(user_profile, campos_sensibles_usuarios)
 
         # 3️⃣ Retornar usuario + tokens
         # Nueva lógica de flujo facial:
@@ -169,20 +193,36 @@ async def guardar_nota(note_data: Note, background_tasks: BackgroundTasks):
         # Usar servicio de análisis de texto
         analysis = TextAnalysisService.analyze_single_note(nota_texto)
         
+        # 🔐 Encriptar campos sensibles antes de insertar
+        nota_encriptada = encryption_service.encrypt(nota_texto)
+        tokens_encriptados = encryption_service.encrypt(analysis['tokens'])
+        
         # Insertar en la tabla notas
         response = supabase.table("notas").insert([{
             "usuario_id": user_id,
-            "nota": nota_texto,
+            "nota": nota_encriptada,
             "sentimiento": analysis['sentimiento'],
             "emocion": analysis['emocion'],
             "emocion_score": analysis['emocion_score'],
-            "tokens": analysis['tokens']
+            "tokens": tokens_encriptados
         }]).execute()
+        
+        # 🔓 Desencriptar datos en la respuesta
+        if response.data:
+            for item in response.data:
+                if item.get("nota"):
+                    item["nota"] = encryption_service.decrypt(item["nota"])
+                if item.get("tokens"):
+                    item["tokens"] = encryption_service.decrypt(item["tokens"])
         
         # GENERATIVE AI: usar servicio de Gemini
         accompaniment_text = None
         try:
             accompaniment_text = GeminiService.generate_accompaniment(nota_texto)
+            if accompaniment_text:
+                print(f"[GUARDAR_NOTA] Acompañamiento generado exitosamente (length: {len(accompaniment_text)})")
+            else:
+                print(f"[GUARDAR_NOTA] Acompañamiento no se pudo generar (retornó None)")
         except Exception as e:
             print(f"Error generando acompañamiento con Gemini: {e}")
             traceback.print_exc()
@@ -308,6 +348,11 @@ async def get_students(psychologist_id: str | None = None):
 
         response = query.execute()
         
+        # 🔓 Desencriptar campos sensibles
+        campos_sensibles_usuarios = ["nombre", "apellido"]
+        if response.data:
+            response.data = [encryption_service.decrypt_dict_fields(item, campos_sensibles_usuarios) for item in response.data]
+        
         # Corrección: Asegurar indentación de 4 espacios
         if not response.data:
             return {"message": "No se encontraron estudiantes", "data": []}
@@ -328,6 +373,13 @@ async def get_notas_by_user(user_id: str):
         # Corrección: Asegurar indentación de 4 espacios
         if not response or not getattr(response, 'data', None):
             return {"message": "No se encontraron notas para este usuario", "data": []}
+
+        # 🔓 Desencriptar campos sensibles
+        for item in response.data:
+            if item.get("nota"):
+                item["nota"] = encryption_service.decrypt(item["nota"])
+            if item.get("tokens"):
+                item["tokens"] = encryption_service.decrypt(item["tokens"])
 
         return {"message": "Notas recuperadas con éxito", "data": response.data}
     except Exception as e:
@@ -637,6 +689,11 @@ async def get_students_with_alerts(limit_notes: int = 5, psychologist_id: str | 
         users_res = q.execute()
         students = users_res.data or []
 
+        # 🔓 Desencriptar campos sensibles
+        campos_sensibles_usuarios = ["nombre", "apellido"]
+        if students:
+            students = [encryption_service.decrypt_dict_fields(s, campos_sensibles_usuarios) for s in students]
+
         if not students:
             return {"message": "No se encontraron estudiantes", "data": []}
 
@@ -682,6 +739,12 @@ def trigger_alert_if_keywords(user_id: str, note_text: str) -> None:
         # 1) Buscar estudiante para obtener psicologo_id
         u_res = supabase.table('usuarios').select('id, nombre, apellido, psicologo_id').eq('id', user_id).single().execute()
         student = u_res.data or {}
+        
+        # 🔓 Desencriptar campos sensibles del estudiante
+        if student:
+            campos_sensibles_usuarios = ["nombre", "apellido"]
+            student = encryption_service.decrypt_dict_fields(student, campos_sensibles_usuarios)
+        
         psicologo_id = (student or {}).get('psicologo_id')
 
         # 2) Obtener correo del psicólogo
@@ -689,6 +752,9 @@ def trigger_alert_if_keywords(user_id: str, note_text: str) -> None:
         if psicologo_id:
             p_res = supabase.table('usuarios').select('correo_institucional, nombre, apellido').eq('id', psicologo_id).single().execute()
             if p_res and getattr(p_res, 'data', None):
+                # 🔓 Desencriptar campos sensibles del psicólogo
+                campos_sensibles_usuarios = ["nombre", "apellido"]
+                p_res.data = encryption_service.decrypt_dict_fields(p_res.data, campos_sensibles_usuarios)
                 to_email = p_res.data.get('correo_institucional')
 
         # Fallback a correo de alerta general
@@ -755,16 +821,39 @@ async def face_register(payload: FaceRegisterRequest):
             print(f"[FACE_REGISTER][STORAGE_ERROR] {e}")
             raise HTTPException(status_code=500, detail="Error al subir imagen a Storage")
 
-        update_fields = {
-            "face_encoding": encoding,
-            "face_registered_at": datetime.utcnow().isoformat(),
-        }
-        if foto_url:
-            update_fields["foto_perfil_url"] = foto_url
-
-        supabase.table("usuarios").update(update_fields).eq("id", payload.user_id).execute()
-
-        return {"message": "Rostro registrado con éxito", "foto_perfil_url": foto_url, "encoding_len": len(encoding)}
+        # 🔐 Encriptar campos sensibles antes de actualizar
+        try:
+            # Verificar que encoding sea una lista antes de encriptar
+            if not isinstance(encoding, list):
+                raise ValueError(f"Encoding debe ser una lista, recibido: {type(encoding)}")
+            
+            face_encoding_encrypted = encryption_service.encrypt(encoding)
+            if not face_encoding_encrypted:
+                raise ValueError("Error al encriptar face_encoding")
+            
+            update_fields = {
+                "face_encoding": face_encoding_encrypted,
+                "face_registered_at": datetime.utcnow().isoformat(),
+            }
+            if foto_url:
+                foto_url_encrypted = encryption_service.encrypt(foto_url)
+                if foto_url_encrypted:
+                    update_fields["foto_perfil_url"] = foto_url_encrypted
+                else:
+                    print(f"[FACE_REGISTER] Advertencia: No se pudo encriptar foto_perfil_url")
+            
+            supabase.table("usuarios").update(update_fields).eq("id", payload.user_id).execute()
+            
+            # Verificar que se guardó correctamente (opcional, para debugging)
+            verify_res = supabase.table("usuarios").select("face_encoding").eq("id", payload.user_id).single().execute()
+            if verify_res.data and verify_res.data.get("face_encoding"):
+                print(f"[FACE_REGISTER] Face encoding guardado correctamente (encriptado)")
+            
+            return {"message": "Rostro registrado con éxito", "foto_perfil_url": foto_url, "encoding_len": len(encoding)}
+        except Exception as enc_error:
+            print(f"[FACE_REGISTER] Error al encriptar/guardar: {enc_error}")
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=f"Error al guardar datos encriptados: {str(enc_error)}")
     except HTTPException:
         raise
     except Exception as e:
@@ -779,7 +868,44 @@ async def face_verify(payload: FaceVerifyRequest):
         data = u_res.data
         if not data or not data.get("face_encoding"):
             raise HTTPException(status_code=404, detail="Usuario sin rostro registrado")
-        stored_enc = data.get("face_encoding")
+        
+        # 🔓 Desencriptar face_encoding
+        stored_enc_raw = data.get("face_encoding")
+        
+        # Si stored_enc_raw es None o vacío, no hay encoding
+        if not stored_enc_raw:
+            raise HTTPException(status_code=404, detail="Usuario sin rostro registrado")
+        
+        # Intentar desencriptar
+        try:
+            stored_enc = encryption_service.decrypt(stored_enc_raw)
+            
+            # Si decrypt retorna el mismo string (no estaba encriptado o falló), intentar parsear como JSON
+            if isinstance(stored_enc, str) and stored_enc == stored_enc_raw:
+                # El dato podría no estar encriptado (datos antiguos) o ser un string JSON
+                try:
+                    import json
+                    stored_enc = json.loads(stored_enc)
+                except:
+                    # Si stored_enc_raw es una lista directamente (datos antiguos sin encriptar)
+                    if isinstance(stored_enc_raw, list):
+                        stored_enc = stored_enc_raw
+                    else:
+                        print(f"[FACE_VERIFY] Error: stored_enc_raw type: {type(stored_enc_raw)}, value: {str(stored_enc_raw)[:100]}")
+                        raise HTTPException(status_code=500, detail="Formato de encoding facial inválido - no se pudo desencriptar")
+        except Exception as e:
+            print(f"[FACE_VERIFY] Error al desencriptar: {e}")
+            # Si falla la desencriptación, podría ser que el dato no esté encriptado (datos antiguos)
+            if isinstance(stored_enc_raw, list):
+                stored_enc = stored_enc_raw
+            else:
+                raise HTTPException(status_code=500, detail=f"Error al desencriptar encoding facial: {str(e)}")
+        
+        # Asegurar que stored_enc sea una lista
+        if not isinstance(stored_enc, list):
+            print(f"[FACE_VERIFY] Error: stored_enc no es lista, tipo: {type(stored_enc)}")
+            raise HTTPException(status_code=500, detail="Formato de encoding facial inválido - se esperaba una lista")
+        
         img = FaceRecognitionService.decode_base64_image(payload.frame_base64)
         verified = FaceRecognitionService.compare_face(stored_enc, img)
         return {"verified": verified}
@@ -852,17 +978,25 @@ async def upload_drawing(payload: dict):
         if not imagen_url:
             raise HTTPException(status_code=500, detail="No se obtuvo URL pública de la imagen")
         
-        # Guardar registro en la tabla
+        # 🔐 Encriptar campos sensibles antes de guardar
         drawing_record = {
             "usuario_id": user_id,
-            "titulo": payload.get("titulo", ""),
-            "descripcion": payload.get("descripcion", ""),
-            "imagen_url": imagen_url,
+            "titulo": encryption_service.encrypt(payload.get("titulo", "")) if payload.get("titulo") else None,
+            "descripcion": encryption_service.encrypt(payload.get("descripcion", "")) if payload.get("descripcion") else None,
+            "imagen_url": encryption_service.encrypt(imagen_url),
             "drawing_data": payload.get("drawing_data"),
             "tipo_dibujo": payload.get("tipo_dibujo", "uploaded")
         }
         
         insert_res = supabase.table("drawings").insert(drawing_record).execute()
+        
+        # 🔓 Desencriptar datos en la respuesta
+        if insert_res.data and len(insert_res.data) > 0:
+            campos_sensibles_drawings = ["titulo", "descripcion", "imagen_url"]
+            # Modificar directamente los campos en lugar de crear nueva referencia
+            for field in campos_sensibles_drawings:
+                if field in insert_res.data[0] and insert_res.data[0][field] is not None:
+                    insert_res.data[0][field] = encryption_service.decrypt(insert_res.data[0][field])
         
         return {
             "message": "Dibujo subido con éxito",
@@ -884,6 +1018,11 @@ async def get_student_drawings(user_id: str):
             .eq("usuario_id", user_id)\
             .order("created_at", desc=True)\
             .execute()
+        
+        # 🔓 Desencriptar campos sensibles
+        campos_sensibles_drawings = ["titulo", "descripcion", "imagen_url"]
+        if response.data:
+            response.data = [encryption_service.decrypt_dict_fields(item, campos_sensibles_drawings) for item in response.data]
         
         return {
             "message": "Dibujos recuperados con éxito",
@@ -907,6 +1046,11 @@ async def get_psychologist_students_drawings(psychologist_id: str):
             .eq("psicologo_id", psychologist_id)\
             .execute()
         
+        # 🔓 Desencriptar campos sensibles de estudiantes
+        campos_sensibles_usuarios = ["nombre", "apellido"]
+        if students_res.data:
+            students_res.data = [encryption_service.decrypt_dict_fields(item, campos_sensibles_usuarios) for item in students_res.data]
+        
         student_ids = [s["id"] for s in (students_res.data or [])]
         
         if not student_ids:
@@ -921,6 +1065,20 @@ async def get_psychologist_students_drawings(psychologist_id: str):
             .in_("usuario_id", student_ids)\
             .order("created_at", desc=True)\
             .execute()
+        
+        # 🔓 Desencriptar campos sensibles de dibujos y usuarios relacionados
+        campos_sensibles_drawings = ["titulo", "descripcion", "imagen_url"]
+        if drawings_res.data:
+            for item in drawings_res.data:
+                # Desencriptar campos del dibujo (modificar directamente)
+                for field in campos_sensibles_drawings:
+                    if field in item and item[field] is not None:
+                        item[field] = encryption_service.decrypt(item[field])
+                # Desencriptar campos del usuario relacionado
+                if item.get("usuarios"):
+                    for field in campos_sensibles_usuarios:
+                        if field in item["usuarios"] and item["usuarios"][field] is not None:
+                            item["usuarios"][field] = encryption_service.decrypt(item["usuarios"][field])
         
         return {
             "message": "Dibujos recuperados con éxito",
@@ -949,7 +1107,9 @@ async def analyze_drawing(drawing_id: str):
             raise HTTPException(status_code=404, detail="Dibujo no encontrado")
         
         drawing = drawing_res.data
-        imagen_url = drawing.get("imagen_url")
+        
+        # 🔓 Desencriptar imagen_url
+        imagen_url = encryption_service.decrypt(drawing.get("imagen_url"))
         
         if not imagen_url:
             raise HTTPException(status_code=400, detail="El dibujo no tiene URL de imagen")

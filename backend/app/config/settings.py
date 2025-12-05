@@ -22,8 +22,7 @@ class Settings:
     
     # Gemini AI Configuration
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-    GEMINI_ACCOMPANIMENT_MODEL: str = os.getenv("GEMINI_ACCOMPANIMENT_MODEL", "gemini-2.0-flash")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
     
     # Email Configuration
     GMAIL_SENDER: str = os.getenv("GMAIL_SENDER", "")
@@ -42,6 +41,9 @@ class Settings:
     
     # Environment
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
+    
+    # Encryption Configuration
+    ENCRYPTION_KEY: str = os.getenv("ENCRYPTION_KEY", "")
     
     @classmethod
     def validate(cls) -> None:

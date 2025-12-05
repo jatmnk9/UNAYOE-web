@@ -2,7 +2,7 @@
 
 import { useAuth } from "../context/AuthContext";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Home as HomeIcon, NotebookPen, LogOut, Palette } from 'lucide-react';
+import { Home as HomeIcon, NotebookPen, LogOut, Palette, Calendar } from 'lucide-react';
 
 export default function PsychologistPortal() {
     const { user, logout } = useAuth();
@@ -21,6 +21,17 @@ export default function PsychologistPortal() {
                 ? "sidebar-nav-button active"
                 : "sidebar-nav-button";
         }
+
+        // Para rutas con parámetros dinámicos, usar startsWith
+        // Ejemplo: /psychologist/seguimiento-citas/:studentId debe activar /psychologist/seguimiento-citas
+        if (path === `${baseUrl}/seguimiento` && currentPath.startsWith(`${baseUrl}/seguimiento/`)) {
+            return "sidebar-nav-button active";
+        }
+
+        if (path === `${baseUrl}/seguimiento-citas` && currentPath.startsWith(`${baseUrl}/seguimiento-citas/`)) {
+            return "sidebar-nav-button active";
+        }
+
         return currentPath === path
             ? "sidebar-nav-button active"
             : "sidebar-nav-button";
@@ -69,7 +80,13 @@ export default function PsychologistPortal() {
                             to={`${baseUrl}/seguimiento-citas`}
                             className={getNavLinkClass(`${baseUrl}/seguimiento-citas`)}
                         >
-                            <NotebookPen className="sidebar-nav-icon" />Seguimiento de Citas
+                            <NotebookPen className="sidebar-nav-icon" />Seguimiento de Aprendizajes
+                        </Link>
+                        <Link
+                            to={`${baseUrl}/appointments-management`}
+                            className={getNavLinkClass(`${baseUrl}/appointments-management`)}
+                        >
+                            <Calendar className="sidebar-nav-icon" />Gestión de Citas
                         </Link>
                         <Link
                             to={`${baseUrl}/drawings`}

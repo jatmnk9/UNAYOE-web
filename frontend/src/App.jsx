@@ -23,6 +23,7 @@ import StudentAttendanceReport from "./pages/StudentAttendanceReport";
 import StudentGallery from "./pages/StudentGallery";
 import PsychologistDrawingsView from "./pages/PsychologistDrawingsView";
 import MisCitas from "./pages/MisCitas";
+import AppointmentsManagement from "./pages/AppointmentsManagement";
 
 // ✅ RUTA PRIVADA integrada
 function PrivateRoute({ children, role }) {
@@ -120,7 +121,7 @@ export default function App() {
         <Route path="favoritos" element={<MisFavoritos />} />
         <Route path="gallery" element={<StudentGallery />} />
         <Route path="asistencia" element={<StudentAttendance />} />
-        <Route path="citas" element={<MisCitas />} />
+        <Route path="appointments" element={<MisCitas />} />
       </Route>
 
       {/* =======================================
@@ -138,8 +139,11 @@ export default function App() {
         <Route path="seguimiento" element={<SeguimientoDiario />} />
         <Route path="seguimiento/:studentId" element={<StudentReport />} />
         <Route path="drawings" element={<PsychologistDrawingsView />} />
+        {/* Análisis de sentimientos de asistencias */}
         <Route path="seguimiento-citas" element={<SeguimientoCitas />} />
         <Route path="seguimiento-citas/:studentId" element={<StudentAttendanceReport />} />
+        {/* Gestión de citas (appointments) */}
+        <Route path="appointments-management" element={<AppointmentsManagement />} />
       </Route>
 
       {/* Catch-all */}
