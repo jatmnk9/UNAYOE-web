@@ -13,8 +13,16 @@ import traceback
 from datetime import datetime
 import numpy as np
 import cv2
+import nltk
 import sys
 import os
+
+# Descargar datos necesarios de NLTK al iniciar
+try:
+    nltk.download('punkt_tab', quiet=True)
+    nltk.download('stopwords', quiet=True)
+except:
+    pass
 
 # Obtiene la ruta absoluta de la carpeta donde está backend.py
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -59,12 +67,7 @@ app = FastAPI(title="API de Análisis de Bienestar")
 # Configura CORS para permitir que el frontend se conecte
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://unayoe-frontend.vercel.app",
-        *settings.CORS_ORIGINS,
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
